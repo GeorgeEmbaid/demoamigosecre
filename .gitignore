@@ -1,0 +1,16 @@
+## Build and temporary folders
+bin/
+obj/
+
+## Visual Studio
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+## Data Protection Keys
+App_Data/keys/
+
+## Keep the SQLite database tracked as requested by the user
+!amigosecreto.db

@@ -1,0 +1,276 @@
+@inject IPersonService PersonService
+
+@if (IsOpen)
+{
+    <div class="modal-backdrop-custom" @onclick="HandleCancel"></div>
+    <div class="modal d-block" tabindex="-1" role="dialog" style="z-index: 1060; overflow-y: auto;">
+        <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+                <div class="modal-header bg-light border-bottom px-4 py-3" style="border-top: 4px solid var(--bnc-orange);">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="icon-box-sm rounded-circle text-white" style="background-color: var(--bnc-navy);">
+                            <SvgIcon Name="@(IsNew ? "plus" : "edit")" Size="16" />
+                        </div>
+                        <h4 class="modal-title fw-bold mb-0" style="color: var(--bnc-navy-dark);">
+                            @(IsNew ? "Registrar Nuevo Participante BNC" : $"Editar: {Model.FullName}")
+                        </h4>
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Cerrar" @onclick="HandleCancel"></button>
+                </div>
+
+                <EditForm Model="Model" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+
+                    <div class="modal-body px-4 py-3">
+                        @if (ErrorMessage != null)
+                        {
+                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                                <SvgIcon Name="alert" Size="16" Class="text-danger" />
+                                <div>@ErrorMessage</div>
+                            </div>
+                        }
+
+                        <!-- Basic Information Row -->
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Nombre *</label>
+                                <InputText class="form-control" @bind-Value="Model.FirstName" placeholder="Ej: Carlos" />
+                                <ValidationMessage For="@(() => Model.FirstName)" class="text-danger small" />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Apellido *</label>
+                                <InputText class="form-control" @bind-Value="Model.LastName" placeholder="Ej: Mendoza" />
+                                <ValidationMessage For="@(() => Model.LastName)" class="text-danger small" />
+                            </div>
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Departamento / Área BNC</label>
+                                <input type="text" class="form-control" list="deptOptions" @bind="Model.Department" placeholder="Ej: Tecnología e Innovación" />
+                                <datalist id="deptOptions">
+                                    @foreach (var d in Departments)
+                                    {
+                                        <option value="@d" />
+                                    }
+                                </datalist>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Correo Electrónico</label>
+                                <InputText type="email" class="form-control" @bind-Value="Model.Email" placeholder="usuario@bnc.com.ve" />
+                                <ValidationMessage For="@(() => Model.Email)" class="text-danger small" />
+                            </div>
+                        </div>
+
+                        <!-- Sizes & Avatar Color -->
+                        <div class="row g-3 mb-3 p-3 bg-light rounded-3 border">
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="shirt" Size="14" Class="text-muted" /> Talla Camisa
+                                </label>
+                                <InputText class="form-control" @bind-Value="Model.ShirtSize" placeholder="Ej: M, L, XL" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="tag" Size="14" Class="text-muted" /> Calzado
+                                </label>
+                                <InputText class="form-control" @bind-Value="Model.ShoeSize" placeholder="Ej: 41, 42" />
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="palette" Size="14" Class="text-muted" /> Color Favorito
+                                </label>
+                                <InputText class="form-control" @bind-Value="Model.FavoriteColor" placeholder="Ej: Azul Marino" />
+                            </div>
+
+                            <!-- Avatar Color Selector with BNC Palettes -->
+                            <div class="col-12 mt-2">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-block">Color del Avatar</label>
+                                <div class="d-flex gap-2 flex-wrap align-items-center">
+                                    @foreach (var color in ColorPalette)
+                                    {
+                                        <button type="button" 
+                                                class="rounded-circle border-2 p-0 d-flex align-items-center justify-content-center" 
+                                                style="width: 30px; height: 30px; background-color: @color; cursor: pointer; border-style: solid; border-color: @(Model.AvatarColor == color ? "#002855" : "transparent");" 
+                                                @onclick="() => Model.AvatarColor = color">
+                                            @if (Model.AvatarColor == color)
+                                            {
+                                                <SvgIcon Name="check" Size="14" Class="text-white" />
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section: Cosas que le gustan -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success mb-1 d-flex justify-content-between align-items-center">
+                                <span class="d-flex align-items-center gap-1">
+                                    <SvgIcon Name="gift" Size="16" />
+                                    <span>Cosas que le gustan / Ideas de regalo *</span>
+                                </span>
+                                <small class="text-muted fw-normal">Un gusto por línea</small>
+                            </label>
+                            <InputTextArea class="form-control border-success-subtle" 
+                                           rows="3" 
+                                           @bind-Value="Model.Likes" 
+                                           placeholder="Ej: Café gourmet en grano&#10;Termo para agua fría&#10;Chocolates oscuros > 70%" />
+                            <ValidationMessage For="@(() => Model.Likes)" class="text-danger small" />
+                        </div>
+
+                        <!-- Section: Cosas que NO le gustan -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-danger mb-1 d-flex justify-content-between align-items-center">
+                                <span class="d-flex align-items-center gap-1">
+                                    <SvgIcon Name="dislike" Size="16" />
+                                    <span>Cosas que NO le gustan / Evitar regalar *</span>
+                                </span>
+                                <small class="text-muted fw-normal">Un ítem por línea</small>
+                            </label>
+                            <InputTextArea class="form-control border-danger-subtle" 
+                                           rows="3" 
+                                           @bind-Value="Model.Dislikes" 
+                                           placeholder="Ej: Adornos de plástico&#10;Bebidas alcohólicas&#10;Tazas con mensajes genéricos" />
+                            <ValidationMessage For="@(() => Model.Dislikes)" class="text-danger small" />
+                        </div>
+
+                        <!-- Section: Alergias -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-warning-emphasis mb-1 d-flex justify-content-between align-items-center">
+                                <span class="d-flex align-items-center gap-1">
+                                    <SvgIcon Name="alert" Size="16" />
+                                    <span>A qué es alérgico / Restricciones médicas</span>
+                                </span>
+                                <small class="text-muted fw-normal">Alimenticias o de contacto</small>
+                            </label>
+                            <InputTextArea class="form-control border-warning-subtle" 
+                                           rows="2" 
+                                           @bind-Value="Model.Allergies" 
+                                           placeholder="Ej: Alérgico al maní y frutos secos&#10;Intolerante a la lactosa" />
+                        </div>
+
+                        <!-- Section: Notas Adicionales -->
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold text-secondary small mb-1">Notas extras / Mensaje personal</label>
+                            <InputText class="form-control" @bind-Value="Model.Notes" placeholder="Cualquier pista o comentario extra para el amigo secreto..." />
+                        </div>
+                    </div>
+
+                    <div class="modal-footer bg-light px-4 py-3 border-top d-flex justify-content-between">
+                        <button type="button" class="btn btn-outline-secondary px-3" @onclick="HandleCancel">Cancelar</button>
+                        <button type="submit" class="btn btn-bnc-orange px-4 d-flex align-items-center gap-2" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm" role="status"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <SvgIcon Name="check" Size="16" />
+                                <span>Guardar Participante</span>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsOpen { get; set; }
+    [Parameter] public Person? PersonToEdit { get; set; }
+    [Parameter] public List<string> Departments { get; set; } = new();
+    [Parameter] public EventCallback<Person> OnSaved { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private Person Model = new();
+    private bool IsNew => PersonToEdit == null || PersonToEdit.Id == 0;
+    private bool isSaving = false;
+    private string? ErrorMessage;
+
+    private static readonly string[] ColorPalette = new[]
+    {
+        "#002855", // BNC Navy
+        "#FF6600", // BNC Orange
+        "#059669", // Emerald
+        "#7C3AED", // Purple
+        "#0D9488", // Teal
+        "#DC2626", // Red
+        "#475569", // Slate
+        "#001933"  // Deep Night
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (IsOpen)
+        {
+            ErrorMessage = null;
+            if (PersonToEdit != null && PersonToEdit.Id != 0)
+            {
+                Model = new Person
+                {
+                    Id = PersonToEdit.Id,
+                    FirstName = PersonToEdit.FirstName,
+                    LastName = PersonToEdit.LastName,
+                    Email = PersonToEdit.Email,
+                    Department = PersonToEdit.Department,
+                    ShirtSize = PersonToEdit.ShirtSize,
+                    ShoeSize = PersonToEdit.ShoeSize,
+                    FavoriteColor = PersonToEdit.FavoriteColor,
+                    AvatarColor = PersonToEdit.AvatarColor ?? "#002855",
+                    Likes = PersonToEdit.Likes,
+                    Dislikes = PersonToEdit.Dislikes,
+                    Allergies = PersonToEdit.Allergies,
+                    Notes = PersonToEdit.Notes,
+                    CreatedAt = PersonToEdit.CreatedAt
+                };
+            }
+            else
+            {
+                Model = new Person
+                {
+                    AvatarColor = ColorPalette[0],
+                    Likes = "",
+                    Dislikes = "",
+                    Allergies = ""
+                };
+            }
+        }
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        isSaving = true;
+        ErrorMessage = null;
+
+        try
+        {
+            Person saved;
+            if (IsNew)
+            {
+                saved = await PersonService.CreateAsync(Model);
+            }
+            else
+            {
+                saved = await PersonService.UpdateAsync(Model);
+            }
+
+            await OnSaved.InvokeAsync(saved);
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Error al guardar el participante: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private async Task HandleCancel()
+    {
+        await OnCancel.InvokeAsync();
+    }
+}

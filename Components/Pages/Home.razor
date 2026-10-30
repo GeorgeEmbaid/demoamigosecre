@@ -1,0 +1,274 @@
+@page "/"
+@inject IPersonService PersonService
+@rendermode InteractiveServer
+
+<PageTitle>Amigo Secreto BNC 2026 - Portal de Búsqueda</PageTitle>
+
+<div class="container-fluid px-lg-5 py-4">
+    <!-- Hero Banner with BNC Corporate Identity -->
+    <div class="hero-gradient p-3 p-sm-4 p-md-5 mb-4 mb-md-5 rounded-4 position-relative">
+        <div class="row align-items-center position-relative" style="z-index: 2;">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-white bg-opacity-10 text-white rounded-pill mb-2 mb-sm-3 small fw-semibold border border-white border-opacity-10">
+                    <SvgIcon Name="sparkles" Size="15" Class="text-warning" />
+                    <span>Amigo Secreto • Banco Nacional de Crédito 2026</span>
+                </div>
+                <h1 class="fs-2 fs-md-1 fw-bold text-white mb-2">
+                    Descubre los gustos de tu Amigo Secreto
+                </h1>
+                <p class="text-white-50 mb-0 small" style="max-width: 680px; font-size: 0.95rem;">
+                    Busca a cualquier compañero por su <strong>nombre</strong> o <strong>apellido</strong> para conocer sus preferencias de regalo, lo que prefiere evitar y sus alertas médicas de alergias.
+                </p>
+            </div>
+            <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
+                <div class="d-inline-block p-3 rounded-4 bg-white bg-opacity-10 backdrop-blur border border-white border-opacity-15 text-start shadow-sm">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-3 rounded-3" style="background-color: var(--bnc-orange); color: white;">
+                            <SvgIcon Name="gift" Size="30" />
+                        </div>
+                        <div>
+                            <div class="text-white fw-bold fs-5">@people.Count Participantes</div>
+                            <small class="text-white-50">Listos para el intercambio navideño</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Big Search Bar integrated inside hero -->
+        <div class="mt-4 pt-2 position-relative" style="z-index: 2;">
+            <div class="search-container d-flex align-items-center p-2">
+                <div class="ps-3 d-flex align-items-center" style="color: var(--bnc-orange);">
+                    <SvgIcon Name="search" Size="22" />
+                </div>
+                <input type="text" 
+                       class="search-input" 
+                       placeholder="Escribe el nombre o apellido de tu compañero (ej: Carlos, Gomez, Valentina)..." 
+                       @bind="searchTerm" 
+                       @bind:event="oninput" 
+                       @bind:after="OnSearchChangedAsync" />
+                @if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    <button class="btn btn-sm btn-light rounded-circle me-2 p-1 d-flex align-items-center justify-content-center" 
+                            style="width: 28px; height: 28px;"
+                            title="Limpiar búsqueda" 
+                            @onclick="ClearSearchAsync">
+                        <SvgIcon Name="dislike" Size="16" Class="text-muted" />
+                    </button>
+                }
+                <button class="btn btn-bnc-orange px-3 px-sm-4 py-2 me-1 d-flex align-items-center gap-2" @onclick="SearchAsync">
+                    <SvgIcon Name="search" Size="18" />
+                    <span class="d-none d-sm-inline">Buscar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
+        <!-- Department Chips with smooth horizontal touch carousel -->
+        <div class="filter-scroll-wrapper flex-grow-1">
+            <span class="text-muted small fw-semibold me-1 d-none d-sm-inline-flex align-items-center gap-1">
+                <SvgIcon Name="building" Size="15" Class="text-muted" />
+                <span>Área:</span>
+            </span>
+            <button type="button" 
+                    class="filter-chip @(selectedDepartment == "Todos" ? "active" : "")" 
+                    @onclick='() => FilterByDepartmentAsync("Todos")'>
+                Todos (@allPeopleCount)
+            </button>
+            @foreach (var dept in departments)
+            {
+                <button type="button" 
+                        class="filter-chip @(selectedDepartment == dept ? "active" : "")" 
+                        @onclick="() => FilterByDepartmentAsync(dept)">
+                    @dept
+                </button>
+            }
+        </div>
+
+        <!-- Result count counter -->
+        <div class="text-muted small text-nowrap">
+            <span class="fw-bold text-dark">@filteredPeople.Count</span> de @people.Count participantes
+        </div>
+    </div>
+
+    <!-- People Grid -->
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--bnc-orange);"></div>
+            <p class="text-muted mt-3">Buscando participantes...</p>
+        </div>
+    }
+    else if (!filteredPeople.Any())
+    {
+        <div class="text-center py-5 px-3 bg-white rounded-4 border border-dashed my-4 shadow-sm">
+            <div class="d-inline-flex p-4 rounded-circle bg-light mb-3" style="color: var(--bnc-orange);">
+                <SvgIcon Name="search" Size="48" />
+            </div>
+            <h4 class="fw-bold" style="color: var(--bnc-navy);">No se encontraron participantes</h4>
+            <p class="text-muted max-w-md mx-auto">
+                No hay coincidencias para "<strong>@searchTerm</strong>" 
+                @(selectedDepartment != "Todos" ? $" en el área de {selectedDepartment}" : "").
+            </p>
+            <button class="btn btn-outline-primary mt-2 d-inline-flex align-items-center gap-2" 
+                    style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
+                    @onclick="ClearSearchAsync">
+                <SvgIcon Name="refresh" Size="16" />
+                <span>Limpiar filtros y ver todos</span>
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            @foreach (var person in filteredPeople)
+            {
+                <div class="col-12 col-md-6 col-xl-4">
+                    <div class="person-card" @onclick="() => SelectPerson(person)">
+                        <div class="card-top-accent"></div>
+                        <div class="p-4 flex-grow-1 d-flex flex-column">
+                            <!-- Card Header: Avatar & Name -->
+                            <div class="d-flex align-items-center gap-3 mb-3">
+                                <div class="avatar-circle" style="background: linear-gradient(135deg, @(person.AvatarColor ?? "#002855"), #FF6600);">
+                                    @person.Initials
+                                </div>
+                                <div class="overflow-hidden">
+                                    <h5 class="fw-bold mb-1 text-dark text-truncate">@person.FullName</h5>
+                                    <span class="badge bg-light text-secondary border">
+                                        @(person.Department ?? "BNC")
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Preview of preferences with clean SVG icons -->
+                            <div class="mb-3 flex-grow-1">
+                                <!-- Tags row -->
+                                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                    @if (person.HasCustomLikes)
+                                    {
+                                        <span class="tag-badge tag-like">
+                                            <SvgIcon Name="gift" Size="14" Class="text-success" />
+                                            <span>@person.LikesList.Count gustos</span>
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="tag-badge bg-light text-secondary border">
+                                            <SvgIcon Name="edit" Size="13" Class="text-muted" />
+                                            <span>Gustos por cargar</span>
+                                        </span>
+                                    }
+
+                                    @if (person.HasCustomDislikes)
+                                    {
+                                        <span class="tag-badge tag-dislike">
+                                            <SvgIcon Name="dislike" Size="14" Class="text-danger" />
+                                            <span>@person.DislikesList.Count evitar</span>
+                                        </span>
+                                    }
+
+                                    @if (person.AllergiesList.Any())
+                                    {
+                                        <span class="tag-badge tag-allergy" title="@person.Allergies">
+                                            <SvgIcon Name="alert" Size="14" Class="text-warning-emphasis" />
+                                            <span>Alergias</span>
+                                        </span>
+                                    }
+                                </div>
+
+                                <!-- Sample quote or first like -->
+                                @if (person.HasCustomLikes && person.LikesList.Any())
+                                {
+                                    <p class="text-muted small mb-0 text-truncate">
+                                        <strong class="text-success">Ideal:</strong> @person.LikesList.First()
+                                    </p>
+                                }
+                                else
+                                {
+                                    <p class="text-muted small mb-0 text-truncate fst-italic">
+                                        Haz clic para ver detalles del participante
+                                    </p>
+                                }
+                            </div>
+
+                            <!-- Action button -->
+                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                <span class="small fw-bold" style="color: var(--bnc-navy);">Ver lista de deseos</span>
+                                <span class="d-inline-flex align-items-center" style="color: var(--bnc-orange);">
+                                    <SvgIcon Name="arrow-right" Size="18" />
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<!-- Interactive Detail Drawer Component -->
+<PersonDetailModal Person="selectedPerson" OnClose="CloseDetailModal" />
+
+@code {
+    private List<Person> people = new();
+    private List<Person> filteredPeople = new();
+    private List<string> departments = new();
+    private string searchTerm = "";
+    private string selectedDepartment = "Todos";
+    private int allPeopleCount = 0;
+    private bool isLoading = true;
+
+    private Person? selectedPerson;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        isLoading = true;
+        people = await PersonService.GetAllAsync();
+        allPeopleCount = people.Count;
+        departments = await PersonService.GetDepartmentsAsync();
+        filteredPeople = people;
+        isLoading = false;
+    }
+
+    private async Task OnSearchChangedAsync()
+    {
+        await SearchAsync();
+    }
+
+    private async Task SearchAsync()
+    {
+        isLoading = true;
+        filteredPeople = await PersonService.SearchPeopleAsync(searchTerm, selectedDepartment);
+        isLoading = false;
+    }
+
+    private async Task FilterByDepartmentAsync(string dept)
+    {
+        selectedDepartment = dept;
+        await SearchAsync();
+    }
+
+    private async Task ClearSearchAsync()
+    {
+        searchTerm = "";
+        selectedDepartment = "Todos";
+        await SearchAsync();
+    }
+
+    private void SelectPerson(Person person)
+    {
+        selectedPerson = person;
+    }
+
+    private void CloseDetailModal()
+    {
+        selectedPerson = null;
+    }
+}

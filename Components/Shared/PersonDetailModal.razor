@@ -1,0 +1,258 @@
+@inject IJSRuntime JS
+
+@if (Person != null)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseAsync"></div>
+    <div class="detail-drawer" tabindex="-1" role="dialog" aria-modal="true">
+        <!-- Drawer Header with BNC Palette -->
+        <div class="p-4 border-bottom d-flex align-items-center justify-content-between bg-light position-relative">
+            <div class="d-flex align-items-center gap-3">
+                <div class="avatar-large" style="background: linear-gradient(135deg, @(Person.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                    @Person.Initials
+                </div>
+                <div>
+                    <span class="badge mb-1 text-white" style="background-color: var(--bnc-navy);">
+                        @(Person.Department ?? "Participante BNC")
+                    </span>
+                    <h3 class="h4 mb-0 fw-bold" style="color: var(--bnc-navy-dark);">@Person.FullName</h3>
+                    @if (!string.IsNullOrWhiteSpace(Person.Email))
+                    {
+                        <small class="text-muted d-flex align-items-center gap-1 mt-1">
+                            <SvgIcon Name="mail" Size="14" Class="text-muted" />
+                            <span>@Person.Email</span>
+                        </small>
+                    }
+                </div>
+            </div>
+            <button type="button" class="btn-close" aria-label="Cerrar" @onclick="CloseAsync"></button>
+        </div>
+
+        <!-- Drawer Content -->
+        <div class="p-4 flex-grow-1">
+            <!-- Quick Info Bar (Sizes, Color) with clean SVGs -->
+            @if (!string.IsNullOrWhiteSpace(Person.ShirtSize) || !string.IsNullOrWhiteSpace(Person.ShoeSize) || !string.IsNullOrWhiteSpace(Person.FavoriteColor))
+            {
+                <div class="row g-2 mb-4">
+                    @if (!string.IsNullOrWhiteSpace(Person.FavoriteColor))
+                    {
+                        <div class="col-sm-4">
+                            <div class="p-2 border rounded-3 text-center bg-white shadow-sm">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-1 mb-1">
+                                    <SvgIcon Name="palette" Size="14" Class="text-muted" /> Color Fav
+                                </small>
+                                <span class="fw-bold text-dark small">@Person.FavoriteColor</span>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Person.ShirtSize))
+                    {
+                        <div class="col-sm-4">
+                            <div class="p-2 border rounded-3 text-center bg-white shadow-sm">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-1 mb-1">
+                                    <SvgIcon Name="shirt" Size="14" Class="text-muted" /> Talla Camisa
+                                </small>
+                                <span class="fw-bold text-dark small">@Person.ShirtSize</span>
+                            </div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(Person.ShoeSize))
+                    {
+                        <div class="col-sm-4">
+                            <div class="p-2 border rounded-3 text-center bg-white shadow-sm">
+                                <small class="text-muted d-flex align-items-center justify-content-center gap-1 mb-1">
+                                    <SvgIcon Name="tag" Size="14" Class="text-muted" /> Calzado
+                                </small>
+                                <span class="fw-bold text-dark small">@Person.ShoeSize</span>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            <!-- 1. Cosas que le gustan -->
+            <div class="preference-block likes-block shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold text-success mb-0 d-flex align-items-center gap-2">
+                        <span class="icon-box-sm bg-success text-white rounded-circle">
+                            <SvgIcon Name="gift" Size="15" />
+                        </span>
+                        <span>Cosas que le gustan / Ideas</span>
+                    </h5>
+                    @if (Person.HasCustomLikes)
+                    {
+                        <span class="badge bg-success text-white">@Person.LikesList.Count ideas</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary">Pendiente</span>
+                    }
+                </div>
+
+                @if (Person.HasCustomLikes && Person.LikesList.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var like in Person.LikesList)
+                        {
+                            <div class="list-item-pill">
+                                <span class="text-success mt-1">
+                                    <SvgIcon Name="check-circle" Size="16" />
+                                </span>
+                                <span class="text-dark">@like</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 rounded-3 bg-white border text-center text-muted small">
+                        <p class="mb-1 fw-semibold text-secondary">🎁 Aún no se han registrado los gustos de este participante.</p>
+                        <small>El administrador puede cargarlos desde el <strong>Portal Administrativo</strong>.</small>
+                    </div>
+                }
+            </div>
+
+            <!-- 2. Cosas que NO le gustan -->
+            <div class="preference-block dislikes-block shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold text-danger mb-0 d-flex align-items-center gap-2">
+                        <span class="icon-box-sm bg-danger text-white rounded-circle">
+                            <SvgIcon Name="dislike" Size="15" />
+                        </span>
+                        <span>Cosas que NO le gustan (Evitar)</span>
+                    </h5>
+                    @if (Person.HasCustomDislikes)
+                    {
+                        <span class="badge bg-danger text-white">@Person.DislikesList.Count restricciones</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary-subtle text-secondary">Pendiente</span>
+                    }
+                </div>
+
+                @if (Person.HasCustomDislikes && Person.DislikesList.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var dislike in Person.DislikesList)
+                        {
+                            <div class="list-item-pill">
+                                <span class="text-danger mt-1">
+                                    <SvgIcon Name="dislike" Size="16" />
+                                </span>
+                                <span class="text-dark">@dislike</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-3 rounded-3 bg-white border text-center text-muted small">
+                        <p class="mb-1 fw-semibold text-secondary">🚫 Sin restricciones registradas aún.</p>
+                        <small>Puedes agregar qué cosas evitar regalarle en el Portal Admin.</small>
+                    </div>
+                }
+            </div>
+
+            <!-- 3. Alergias y Restricciones -->
+            <div class="preference-block allergies-block shadow-sm">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="fw-bold text-warning-emphasis mb-0 d-flex align-items-center gap-2">
+                        <span class="icon-box-sm bg-warning text-dark rounded-circle">
+                            <SvgIcon Name="alert" Size="15" />
+                        </span>
+                        <span>Alergias y Restricciones Médicas</span>
+                    </h5>
+                    @if (Person.AllergiesList.Any())
+                    {
+                        <span class="badge bg-warning text-dark fw-bold">Atención</span>
+                    }
+                </div>
+
+                @if (Person.AllergiesList.Any())
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var allergy in Person.AllergiesList)
+                        {
+                            <div class="list-item-pill border-warning-subtle">
+                                <span class="text-warning-emphasis mt-1">
+                                    <SvgIcon Name="alert" Size="16" />
+                                </span>
+                                <span class="text-dark fw-semibold">@allergy</span>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="p-2 rounded bg-white border border-success-subtle text-success small d-flex align-items-center gap-2">
+                        <SvgIcon Name="check" Size="16" />
+                        <span>Sin alergias ni restricciones registradas.</span>
+                    </div>
+                }
+            </div>
+
+            <!-- Notas Adicionales -->
+            @if (!string.IsNullOrWhiteSpace(Person.Notes))
+            {
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <h6 class="fw-bold text-muted small text-uppercase mb-1">Mensaje para el amigo secreto</h6>
+                    <p class="mb-0 text-dark small fst-italic">"@Person.Notes"</p>
+                </div>
+            }
+        </div>
+
+        <!-- Drawer Footer with BNC Orange Button -->
+        <div class="p-3 border-top bg-light d-flex flex-wrap gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" 
+                    style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
+                    @onclick="CopyWishlistAsync">
+                <SvgIcon Name="@(isCopied ? "check" : "copy")" Size="16" />
+                <span>@copyButtonText</span>
+            </button>
+            <button type="button" class="btn btn-secondary px-4 flex-grow-1 flex-sm-grow-0" @onclick="CloseAsync">
+                Cerrar
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public Person? Person { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private string copyButtonText = "Copiar resumen de ideas";
+    private bool isCopied = false;
+
+    private async Task CloseAsync()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task CopyWishlistAsync()
+    {
+        if (Person == null) return;
+
+        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName} ({Person.Department})\n\n" +
+                   $"✅ GUSTOS / IDEAS:\n{string.Join("\n", Person.LikesList.Select(x => $" • {x}"))}\n\n" +
+                   $"❌ EVITAR / NO LE GUSTA:\n{string.Join("\n", Person.DislikesList.Select(x => $" • {x}"))}\n\n" +
+                   $"⚠️ ALERGIAS:\n{(!string.IsNullOrWhiteSpace(Person.Allergies) ? Person.Allergies : "Ninguna")}\n" +
+                   (!string.IsNullOrWhiteSpace(Person.ShirtSize) ? $"👕 Talla: {Person.ShirtSize}\n" : "") +
+                   (!string.IsNullOrWhiteSpace(Person.FavoriteColor) ? $"🎨 Color fav: {Person.FavoriteColor}\n" : "");
+
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            isCopied = true;
+            copyButtonText = "¡Copiado exitosamente!";
+            StateHasChanged();
+            await Task.Delay(2000);
+            isCopied = false;
+            copyButtonText = "Copiar resumen de ideas";
+            StateHasChanged();
+        }
+        catch
+        {
+            copyButtonText = "Resumen listo";
+        }
+    }
+}
