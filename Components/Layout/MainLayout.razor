@@ -16,32 +16,62 @@
                 </div>
             </a>
 
-            <!-- Nav Links with Clean Polished SVG Icons -->
-            <nav class="d-flex align-items-center gap-1 gap-sm-2">
-                @if (AuthService.IsParticipantAuthenticated && AuthService.CurrentParticipant != null)
+            <!-- Unified Session Navigation Controls -->
+            <nav class="d-flex align-items-center gap-2">
+                @if (AuthService.IsAuthenticated)
                 {
-                    <div class="d-none d-lg-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-light border me-1">
-                        <SvgIcon Name="user" Size="14" Class="text-primary" />
-                        <small class="fw-semibold text-dark">@AuthService.CurrentParticipant.FullName</small>
-                    </div>
+                    <!-- Admin is logged in: can switch between Participant Directory and Admin Panel -->
+                    <span class="d-none d-md-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill bg-success-subtle text-success border border-success-subtle small fw-semibold">
+                        <SvgIcon Name="shield" Size="14" Class="text-success" />
+                        <span>Administrador BNC</span>
+                    </span>
+
+                    <NavLink href="" class="btn btn-sm btn-light px-2 px-sm-3 py-2 fw-semibold text-secondary d-flex align-items-center gap-1 border shadow-sm" Match="NavLinkMatch.All">
+                        <SvgIcon Name="users" Size="15" Class="text-secondary" />
+                        <span class="d-none d-sm-inline">Directorio</span>
+                    </NavLink>
+
+                    <NavLink href="admin" class="btn btn-sm px-2 px-sm-3 py-2 fw-semibold d-flex align-items-center gap-1 shadow-sm" style="border: 1px solid var(--bnc-navy); color: var(--bnc-navy); background: white;">
+                        <SvgIcon Name="edit" Size="15" Class="text-primary" />
+                        <span>Panel Admin</span>
+                    </NavLink>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger px-2 px-sm-3 py-2 fw-semibold d-flex align-items-center gap-1 shadow-sm" @onclick="HandleUnifiedLogout" title="Cerrar sesión">
+                        <SvgIcon Name="logout" Size="15" />
+                        <span class="d-none d-sm-inline">Salir</span>
+                    </button>
                 }
+                else if (AuthService.IsParticipantAuthenticated && AuthService.CurrentParticipant != null)
+                {
+                    <!-- Participant is logged in -->
+                    <div class="d-flex align-items-center gap-2 px-2 px-sm-3 py-1 rounded-pill bg-light border">
+                        @if (AuthService.CurrentParticipant.HasProfilePhoto)
+                        {
+                            <img src="@AuthService.CurrentParticipant.ProfilePhotoPath" 
+                                 alt="@AuthService.CurrentParticipant.FullName" 
+                                 class="rounded-circle" 
+                                 style="width: 24px; height: 24px; object-fit: cover;" />
+                        }
+                        else
+                        {
+                            <SvgIcon Name="user" Size="14" Class="text-primary" />
+                        }
+                        <small class="fw-semibold text-dark text-truncate" style="max-width: 160px;">@AuthService.CurrentParticipant.FullName</small>
+                    </div>
 
-                <NavLink href="" class="btn btn-sm btn-light px-2 px-sm-3 py-2 fw-semibold text-secondary d-flex align-items-center gap-1 gap-sm-2 border shadow-sm" Match="NavLinkMatch.All">
-                    <SvgIcon Name="users" Size="15" Class="text-secondary" />
-                    <span class="d-none d-sm-inline">Participantes</span>
-                </NavLink>
-
-                <NavLink href="admin" class="btn btn-sm px-2 px-sm-3 py-2 fw-semibold d-flex align-items-center gap-1 gap-sm-2 shadow-sm" style="border: 1px solid var(--bnc-navy); color: var(--bnc-navy); background: white;">
-                    <SvgIcon Name="shield" Size="15" Class="text-primary" />
-                    @if (AuthService.IsAuthenticated)
-                    {
-                        <span class="badge bg-success-subtle text-success border border-success-subtle">Admin Activo</span>
-                    }
-                    else
-                    {
-                        <span>Admin</span>
-                    }
-                </NavLink>
+                    <button type="button" class="btn btn-sm btn-outline-danger px-2 px-sm-3 py-1 fw-semibold d-flex align-items-center gap-1 shadow-sm" @onclick="HandleUnifiedLogout" title="Cerrar sesión">
+                        <SvgIcon Name="logout" Size="15" />
+                        <span class="d-none d-sm-inline">Salir</span>
+                    </button>
+                }
+                else
+                {
+                    <!-- Not logged in yet -->
+                    <span class="badge bg-light text-secondary border px-3 py-2 d-flex align-items-center gap-1">
+                        <SvgIcon Name="lock" Size="14" Class="text-muted" />
+                        <span>Acceso Unificado BNC</span>
+                    </span>
+                }
             </nav>
         </div>
     </header>
@@ -63,7 +93,7 @@
             </div>
             <div class="d-flex align-items-center gap-3 my-1">
                 <span class="d-inline-flex align-items-center gap-1">
-                    <SvgIcon Name="lock" Size="14" Class="text-muted" /> Soporte Admin: <code>admin / bnc2026</code>
+                    <SvgIcon Name="shield" Size="14" Class="text-muted" /> Portal Corporativo BNC
                 </span>
             </div>
         </div>
@@ -85,6 +115,13 @@
     private void HandleAuthStateChanged()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private void HandleUnifiedLogout()
+    {
+        AuthService.Logout();
+        AuthService.LogoutParticipant();
+        Navigation.NavigateTo("", replace: true);
     }
 
     public void Dispose()

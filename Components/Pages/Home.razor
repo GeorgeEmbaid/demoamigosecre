@@ -2,14 +2,15 @@
 @implements IDisposable
 @inject IPersonService PersonService
 @inject IAdminAuthService AuthService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
-<PageTitle>Amigo Secreto BNC 2026 - Portal de Participantes</PageTitle>
+<PageTitle>Amigo Secreto BNC 2026 - Portal Corporativo</PageTitle>
 
 <div class="container-fluid px-lg-5 py-4">
-    @if (!AuthService.IsParticipantAuthenticated)
+    @if (!AuthService.IsParticipantAuthenticated && !AuthService.IsAuthenticated)
     {
-        <!-- PARTICIPANT LOGIN SCREEN -->
+        <!-- UNIFIED LOGIN SCREEN (PARTICIPANTS & ADMIN) -->
         <div class="row justify-content-center py-4 py-md-5">
             <div class="col-12 col-md-9 col-lg-5 col-xl-4">
                 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
@@ -19,10 +20,10 @@
                             <BncLogo Height="46" ShowSubtitle="true" />
                         </div>
                         <span class="badge rounded-pill px-3 py-1 mb-2 text-white" style="background-color: var(--bnc-navy);">
-                            Actividad Corporativa 2026
+                            Amigo Secreto BNC 2026
                         </span>
-                        <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">Acceso de Participantes</h4>
-                        <p class="text-muted small mb-0">Ingresa con tus credenciales para ver los participantes y registrar tus gustos y foto</p>
+                        <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">Iniciar Sesión</h4>
+                        <p class="text-muted small mb-0">Ingresa con tus credenciales de participante o de administrador</p>
                     </div>
 
                     <!-- Login Form Body -->
@@ -35,7 +36,7 @@
                             </div>
                         }
 
-                        <form @onsubmit="HandleParticipantLoginAsync">
+                        <form @onsubmit="HandleUnifiedLoginAsync">
                             <div class="mb-3">
                                 <label class="form-label fw-semibold text-secondary small mb-1">Usuario BNC</label>
                                 <div class="input-group">
@@ -45,11 +46,11 @@
                                     <input type="text" 
                                            class="form-control border-start-0" 
                                            @bind="loginUsername" 
-                                           placeholder="Inicial nombre + apellido (ej: gembaid)" 
+                                           placeholder="Usuario (ej: gembaid)" 
                                            required />
                                 </div>
                                 <small class="text-muted" style="font-size: 0.75rem;">
-                                    Formato: inicial de tu nombre + tu apellido (ej: <code>sbarragan</code>, <code>gembaid</code>)
+                                    Inicial de tu nombre + tu apellido (ej: <code>sbarragan</code>, <code>gembaid</code>)
                                 </small>
                             </div>
 
@@ -62,14 +63,14 @@
                                     <input type="@(showPassword ? "text" : "password")" 
                                            class="form-control border-start-0 border-end-0" 
                                            @bind="loginPassword" 
-                                           placeholder="apellido2026 (ej: embaid2026)" 
+                                           placeholder="Contraseña (ej: embaid2026)" 
                                            required />
                                     <button class="btn btn-outline-secondary" type="button" @onclick="() => showPassword = !showPassword" title="Mostrar/ocultar contraseña">
                                         <SvgIcon Name="@(showPassword ? "eye-off" : "eye")" Size="16" />
                                     </button>
                                 </div>
                                 <small class="text-muted" style="font-size: 0.75rem;">
-                                    Formato por defecto: tu apellido en minúscula seguido de <code>2026</code>
+                                    Por defecto: tu apellido en minúscula seguido de <code>2026</code>
                                 </small>
                             </div>
 
@@ -77,12 +78,12 @@
                                 @if (isAuthenticating)
                                 {
                                     <span class="spinner-border spinner-border-sm"></span>
-                                    <span>Verificando acceso...</span>
+                                    <span>Verificando credenciales...</span>
                                 }
                                 else
                                 {
                                     <SvgIcon Name="lock" Size="18" />
-                                    <span>Ingresar al Amigo Secreto</span>
+                                    <span>Ingresar al Portal BNC</span>
                                 }
                             </button>
                         </form>
@@ -92,12 +93,11 @@
                             <div class="p-3 rounded-3 bg-light border small">
                                 <div class="fw-bold mb-1 d-flex align-items-center gap-1" style="color: var(--bnc-navy);">
                                     <SvgIcon Name="sparkles" Size="15" Class="text-warning" />
-                                    <span>¿Cómo ingresar por primera vez?</span>
+                                    <span>Guía rápida de acceso:</span>
                                 </div>
                                 <ul class="mb-0 ps-3 text-muted" style="font-size: 0.8rem;">
-                                    <li><strong>Usuario:</strong> Inicial de tu nombre + primer apellido (ej: George Embaid &rarr; <code>gembaid</code>).</li>
-                                    <li><strong>Clave:</strong> Tu apellido + 2026 (ej: <code>embaid2026</code>).</li>
-                                    <li>Si tienes dudas con tu clave, solicita apoyo al organizador en el <a href="admin" class="fw-semibold" style="color: var(--bnc-navy);">Portal Admin</a>.</li>
+                                    <li><strong>Participantes:</strong> Inicial del nombre + apellido (ej: <code>gembaid</code>) y clave <code>apellido2026</code> (ej: <code>embaid2026</code>).</li>
+                                    <li><strong>Administrador:</strong> Ingresa aquí mismo con tus credenciales administrativas para gestionar el portal.</li>
                                 </ul>
                             </div>
                         </div>
@@ -184,12 +184,39 @@
                                     <SvgIcon Name="eye" Size="16" />
                                     <span class="d-none d-sm-inline">Ver mi ficha</span>
                                 </button>
-                                <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1" @onclick="HandleParticipantLogout" title="Cerrar sesión">
+                                <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1" @onclick="HandleLogout" title="Cerrar sesión">
                                     <SvgIcon Name="logout" Size="16" />
                                     <span class="d-none d-sm-inline">Salir</span>
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (AuthService.IsAuthenticated)
+        {
+            <!-- ADMIN VIEWING PARTICIPANT DIRECTORY BAR -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="border-left: 5px solid var(--bnc-navy) !important;">
+                <div class="card-body p-3 px-md-4 bg-white d-flex flex-wrap align-items-center justify-content-between gap-3">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="p-2 rounded-3 text-white" style="background-color: var(--bnc-navy);">
+                            <SvgIcon Name="shield" Size="24" />
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Modo Administrador BNC Activo</h6>
+                            <small class="text-muted">Estás visualizando el directorio público de participantes.</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="admin" class="btn btn-bnc-orange btn-sm d-inline-flex align-items-center gap-2">
+                            <SvgIcon Name="edit" Size="15" />
+                            <span>Ir a Gestión Administrativa</span>
+                        </a>
+                        <button type="button" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center gap-1" @onclick="HandleLogout">
+                            <SvgIcon Name="logout" Size="15" />
+                            <span>Cerrar Sesión</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -427,7 +454,7 @@
     private string searchTerm = "";
     private bool isLoading = true;
 
-    // Participant Login State
+    // Unified Login State
     private string loginUsername = "";
     private string loginPassword = "";
     private string? loginError;
@@ -442,7 +469,7 @@
     protected override async Task OnInitializedAsync()
     {
         AuthService.OnAuthenticationStateChanged += HandleAuthStateChanged;
-        if (AuthService.IsParticipantAuthenticated)
+        if (AuthService.IsParticipantAuthenticated || AuthService.IsAuthenticated)
         {
             await LoadDataAsync();
         }
@@ -450,26 +477,43 @@
 
     private void HandleAuthStateChanged()
     {
-        InvokeAsync(StateHasChanged);
+        InvokeAsync(async () =>
+        {
+            if ((AuthService.IsParticipantAuthenticated || AuthService.IsAuthenticated) && !people.Any())
+            {
+                await LoadDataAsync();
+            }
+            StateHasChanged();
+        });
     }
 
-    private async Task HandleParticipantLoginAsync()
+    private async Task HandleUnifiedLoginAsync()
     {
         loginError = null;
         isAuthenticating = true;
         try
         {
+            // 1. Verificar primero si son las credenciales del Administrador (admin / bnc2026)
+            if (AuthService.Login(loginUsername, loginPassword))
+            {
+                AuthService.LogoutParticipant();
+                loginPassword = "";
+                Navigation.NavigateTo("admin");
+                return;
+            }
+
+            // 2. Si no es admin, verificar si corresponde a un participante BNC
             var participant = await PersonService.AuthenticateParticipantAsync(loginUsername, loginPassword);
             if (participant != null)
             {
+                AuthService.Logout();
                 AuthService.SetParticipant(participant);
                 loginPassword = "";
                 await LoadDataAsync();
+                return;
             }
-            else
-            {
-                loginError = "Usuario o contraseña incorrectos. Recuerda usar la inicial de tu nombre + apellido (ej: gembaid) y tu apellido + 2026 (ej: embaid2026).";
-            }
+
+            loginError = "Usuario o contraseña incorrectos. Si eres participante usa inicial + apellido (ej: gembaid) y clave apellido2026 (ej: embaid2026).";
         }
         finally
         {
@@ -477,8 +521,9 @@
         }
     }
 
-    private void HandleParticipantLogout()
+    private void HandleLogout()
     {
+        AuthService.Logout();
         AuthService.LogoutParticipant();
         selectedPerson = null;
         isMyProfileModalOpen = false;

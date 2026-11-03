@@ -2,6 +2,7 @@
 @implements IDisposable
 @inject IAdminAuthService AuthService
 @inject IPersonService PersonService
+@inject NavigationManager Navigation
 @rendermode InteractiveServer
 
 <PageTitle>Portal Administrativo BNC - Amigo Secreto 2026</PageTitle>
@@ -397,6 +398,10 @@
         {
             await LoadDataAsync();
         }
+        else
+        {
+            Navigation.NavigateTo("");
+        }
     }
 
     private void HandleAuthStateChanged()
@@ -404,18 +409,26 @@
         InvokeAsync(StateHasChanged);
     }
 
-    private void HandleLogin()
+    private async Task HandleLogin()
     {
         loginError = null;
-        var success = AuthService.Login(inputUser, inputPassword);
-        if (!success)
+        if (AuthService.Login(inputUser, inputPassword))
         {
-            loginError = "Credenciales incorrectas. Verifica que el usuario sea 'admin' y la clave 'bnc2026'.";
+            AuthService.LogoutParticipant();
+            await LoadDataAsync();
+            return;
         }
-        else
+
+        var participant = await PersonService.AuthenticateParticipantAsync(inputUser, inputPassword);
+        if (participant != null)
         {
-            _ = LoadDataAsync();
+            AuthService.Logout();
+            AuthService.SetParticipant(participant);
+            Navigation.NavigateTo("");
+            return;
         }
+
+        loginError = "Credenciales incorrectas.";
     }
 
     private void FillDemoCredentials()
@@ -427,8 +440,10 @@
     private void HandleLogout()
     {
         AuthService.Logout();
+        AuthService.LogoutParticipant();
         inputUser = "";
         inputPassword = "";
+        Navigation.NavigateTo("");
     }
 
     private async Task LoadDataAsync()

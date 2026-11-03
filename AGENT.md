@@ -9,8 +9,10 @@ Este documento contiene toda la información técnica, arquitectónica y operati
 El **Portal Amigo Secreto BNC 2026** es una aplicación web interactiva desarrollada con **Blazor Server** (.NET 10 / Visual Studio 2026) y **SQLite** diseñada para el intercambio navideño corporativo de los colaboradores del **Banco Nacional de Crédito (BNC)**.
 
 ### Características Principales Implementadas:
-1. **Autenticación Individual de Participantes (Página Principal `/`):**
-   - Cada participante debe iniciar sesión para ingresar a ver quiénes participan en la actividad de Amigo Secreto.
+1. **Login Unificado para Participantes y Administrador (Página Principal `/`):**
+   - Existe una **única pantalla de inicio de sesión** en `/`:
+     - Si se ingresa con las credenciales del **Administrador (`admin` / `bnc2026`)**, el sistema inicia sesión en modo administrativo, redirige al Panel de Gestión (`/admin`) y habilita en la barra superior la conmutación libre entre el **Directorio (`/`)** y el **Panel Admin (`/admin`)**.
+     - Si se ingresa con las credenciales de un **Participante BNC**, el sistema inicia sesión con el perfil de ese colaborador y muestra el directorio de los 51 participantes junto con su barra de autogestión.
    - **Dominio de Correo Corporativo:** `@bncenlinea.net` (ej. `gembaid@bncenlinea.net`).
    - **Regla de Usuario por Defecto:** Inicial del primer nombre + primer apellido en minúscula sin acentos (ej. `George Embaid` -> `gembaid`, `Sarahy Barragán` -> `sbarragan`).
    - **Regla de Contraseña por Defecto:** Primer apellido en minúscula sin acentos seguido de `2026` (ej. `embaid2026`, `barragan2026`).
