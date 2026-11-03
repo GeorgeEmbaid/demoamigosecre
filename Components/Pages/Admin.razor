@@ -176,7 +176,7 @@
                         </span>
                         <input type="text" 
                                class="form-control border-start-0" 
-                               placeholder="Filtrar por nombre, apellido, usuario o correo @@bncenlinea.net..." 
+                               placeholder="Filtrar por nombre, apellido o usuario..." 
                                @bind="tableSearch" 
                                @bind:event="oninput" />
                         @if (!string.IsNullOrEmpty(tableSearch))
@@ -230,7 +230,6 @@
                                         }
                                         <div class="overflow-hidden">
                                             <div class="fw-bold text-dark text-truncate">@p.FullName</div>
-                                            <small class="text-muted text-truncate d-block">@(p.Email ?? "Sin correo")</small>
                                         </div>
                                     </div>
                                 </div>
@@ -331,7 +330,6 @@
                                             }
                                             <div>
                                                 <div class="fw-bold text-dark">@p.FullName</div>
-                                                <small class="text-muted">@(p.Email ?? "Sin correo")</small>
                                             </div>
                                         </div>
                                     </td>

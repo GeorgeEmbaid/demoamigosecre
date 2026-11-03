@@ -46,12 +46,9 @@
                                     <input type="text" 
                                            class="form-control border-start-0" 
                                            @bind="loginUsername" 
-                                           placeholder="Usuario (ej: gembaid)" 
+                                           placeholder="Usuario" 
                                            required />
                                 </div>
-                                <small class="text-muted" style="font-size: 0.75rem;">
-                                    Inicial de tu nombre + tu apellido (ej: <code>sbarragan</code>, <code>gembaid</code>)
-                                </small>
                             </div>
 
                             <div class="mb-4">
@@ -63,15 +60,12 @@
                                     <input type="@(showPassword ? "text" : "password")" 
                                            class="form-control border-start-0 border-end-0" 
                                            @bind="loginPassword" 
-                                           placeholder="Contraseña (ej: embaid2026)" 
+                                           placeholder="Contraseña" 
                                            required />
                                     <button class="btn btn-outline-secondary" type="button" @onclick="() => showPassword = !showPassword" title="Mostrar/ocultar contraseña">
                                         <SvgIcon Name="@(showPassword ? "eye-off" : "eye")" Size="16" />
                                     </button>
                                 </div>
-                                <small class="text-muted" style="font-size: 0.75rem;">
-                                    Por defecto: tu apellido en minúscula seguido de <code>2026</code>
-                                </small>
                             </div>
 
                             <button type="submit" class="btn btn-bnc-orange w-100 py-2 fs-6 d-flex align-items-center justify-content-center gap-2" disabled="@isAuthenticating">
@@ -136,9 +130,6 @@
                                         <SvgIcon Name="@(showNewPassword ? "eye-off" : "eye")" Size="16" />
                                     </button>
                                 </div>
-                                <small class="text-muted" style="font-size: 0.75rem;">
-                                    Debe ser distinta a tu clave inicial (<code>@Person.GenerateDefaultPassword(AuthService.CurrentParticipant.LastName)</code>)
-                                </small>
                             </div>
 
                             <div class="mb-4">
@@ -200,7 +191,6 @@
                                 <div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                         <span class="badge text-white" style="background-color: var(--bnc-navy);">Tu Perfil Activo</span>
-                                        <small class="text-muted">@me.Email</small>
                                     </div>
                                     <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">¡Hola, @me.FullName!</h4>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
@@ -305,7 +295,7 @@
                     </div>
                     <input type="text" 
                            class="search-input" 
-                           placeholder="Escribe el nombre o apellido de tu compañero (ej: Sarahy, George, Jesús)..." 
+                           placeholder="Buscar participante por nombre o apellido..." 
                            @bind="searchTerm" 
                            @bind:event="oninput" 
                            @bind:after="OnSearchChangedAsync" />
@@ -395,7 +385,6 @@
                                                 <span class="badge rounded-pill text-white" style="background-color: var(--bnc-orange); font-size: 0.7rem;">Tú</span>
                                             }
                                         </div>
-                                        <small class="text-muted text-truncate d-block">@person.Email</small>
                                     </div>
                                 </div>
 

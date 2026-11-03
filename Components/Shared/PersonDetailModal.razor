@@ -35,13 +35,6 @@
                         }
                     </div>
                     <h3 class="h4 mb-0 fw-bold" style="color: var(--bnc-navy-dark);">@Person.FullName</h3>
-                    @if (!string.IsNullOrWhiteSpace(Person.Email))
-                    {
-                        <small class="text-muted d-flex align-items-center gap-1 mt-1">
-                            <SvgIcon Name="mail" Size="14" Class="text-muted" />
-                            <span>@Person.Email</span>
-                        </small>
-                    }
                 </div>
             </div>
             <button type="button" class="btn-close" aria-label="Cerrar" @onclick="CloseAsync"></button>
@@ -308,7 +301,7 @@
     {
         if (Person == null) return;
 
-        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName} ({Person.Email})\n\n" +
+        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName}\n\n" +
                    $"✅ GUSTOS / IDEAS:\n{string.Join("\n", Person.LikesList.Select(x => $" • {x}"))}\n\n" +
                    $"❌ EVITAR / NO LE GUSTA:\n{string.Join("\n", Person.DislikesList.Select(x => $" • {x}"))}\n\n" +
                    $"⚠️ ALERGIAS:\n{(!string.IsNullOrWhiteSpace(Person.Allergies) ? Person.Allergies : "Ninguna")}\n" +
