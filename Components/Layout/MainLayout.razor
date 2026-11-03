@@ -38,7 +38,7 @@
 
                     <button type="button" class="btn btn-sm btn-outline-danger px-2 px-sm-3 py-2 fw-semibold d-flex align-items-center gap-1 shadow-sm" @onclick="HandleUnifiedLogout" title="Cerrar sesión">
                         <SvgIcon Name="logout" Size="15" />
-                        <span class="d-none d-sm-inline">Salir</span>
+                        <span class="d-none d-sm-inline">Cerrar Sesión</span>
                     </button>
                 }
                 else if (AuthService.IsParticipantAuthenticated && AuthService.CurrentParticipant != null)
@@ -61,16 +61,8 @@
 
                     <button type="button" class="btn btn-sm btn-outline-danger px-2 px-sm-3 py-1 fw-semibold d-flex align-items-center gap-1 shadow-sm" @onclick="HandleUnifiedLogout" title="Cerrar sesión">
                         <SvgIcon Name="logout" Size="15" />
-                        <span class="d-none d-sm-inline">Salir</span>
+                        <span class="d-none d-sm-inline">Cerrar Sesión</span>
                     </button>
-                }
-                else
-                {
-                    <!-- Not logged in yet -->
-                    <span class="badge bg-light text-secondary border px-3 py-2 d-flex align-items-center gap-1">
-                        <SvgIcon Name="lock" Size="14" Class="text-muted" />
-                        <span>Acceso Unificado BNC</span>
-                    </span>
                 }
             </nav>
         </div>
