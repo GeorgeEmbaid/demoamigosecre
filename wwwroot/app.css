@@ -398,6 +398,174 @@ body {
     flex-shrink: 0;
 }
 
+/* Modal 3-Tabs Bar (Mobile-First) */
+.bnc-tabs-bar {
+    flex-shrink: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    background: #f1f5f9;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.bnc-tab-btn {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--text-muted);
+    font-weight: 600;
+    font-size: 0.82rem;
+    padding: 8px 6px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.bnc-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.7);
+    color: var(--bnc-navy);
+}
+
+.bnc-tab-btn.active {
+    background: #ffffff;
+    color: var(--bnc-navy);
+    border-color: #cbd5e1;
+    box-shadow: 0 2px 6px rgba(0, 40, 85, 0.1);
+}
+
+.bnc-tab-btn.active .bnc-tab-icon {
+    color: var(--bnc-orange);
+}
+
+.gift-proposal-card {
+    background: #fffaf5;
+    border: 1.5px solid var(--bnc-orange-border);
+    border-radius: 14px;
+    padding: 14px;
+    transition: all 0.2s ease;
+}
+
+/* Carousel & In-App Image Lightbox Modal */
+.bnc-carousel-nav-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 1.5px solid var(--bnc-orange-border);
+    background: #ffffff;
+    color: var(--bnc-navy);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 40, 85, 0.12);
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.bnc-carousel-nav-btn:hover {
+    background: var(--bnc-orange);
+    color: #ffffff;
+    border-color: var(--bnc-orange);
+    transform: scale(1.06);
+}
+
+.bnc-carousel-nav-btn:active {
+    transform: scale(0.95);
+}
+
+.bnc-carousel-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 999px;
+    background: #cbd5e1;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.bnc-carousel-dot.active {
+    width: 24px;
+    background: var(--bnc-orange);
+}
+
+.bnc-image-preview-trigger {
+    cursor: pointer;
+    position: relative;
+    display: inline-block;
+    border-radius: 10px;
+    overflow: hidden;
+    transition: transform 0.2s ease;
+}
+
+.bnc-image-preview-trigger:hover {
+    transform: scale(1.015);
+}
+
+.bnc-lightbox-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 15, 32, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 1090;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.bnc-lightbox-card {
+    background: #ffffff;
+    border-radius: 18px;
+    width: 100%;
+    max-width: 720px;
+    max-height: 92dvh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    border-top: 4px solid var(--bnc-orange);
+}
+
+.bnc-lightbox-img-container {
+    background: #0f172a;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 240px;
+    max-height: 62dvh;
+    overflow: hidden;
+    padding: 12px;
+}
+
+.bnc-lightbox-img {
+    max-width: 100%;
+    max-height: 58dvh;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+@media (min-width: 576px) {
+    .bnc-tabs-bar {
+        padding: 10px 20px;
+        gap: 10px;
+    }
+
+    .bnc-tab-btn {
+        font-size: 0.9rem;
+        padding: 9px 12px;
+    }
+}
+
 /* Tablet & Desktop Modal Adjustment (Mobile-First min-width 576px) */
 @media (min-width: 576px) {
     .bnc-modal-wrapper {

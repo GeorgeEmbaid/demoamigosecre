@@ -9,12 +9,15 @@
             <div class="d-flex align-items-center gap-3">
                 @if (Person.HasProfilePhoto)
                 {
-                    <a href="@Person.ProfilePhotoPath" target="_blank" title="Ver foto completa" class="position-relative d-inline-block">
+                    <button type="button"
+                            class="btn p-0 border-0 bg-transparent position-relative d-inline-block bnc-image-preview-trigger rounded-circle"
+                            title="Ver foto completa"
+                            @onclick="OpenProfilePhotoModal">
                         <img src="@Person.ProfilePhotoPath" 
                              alt="@Person.FullName" 
                              class="rounded-circle shadow-sm" 
                              style="width: 72px; height: 72px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
-                    </a>
+                    </button>
                 }
                 else
                 {
@@ -82,47 +85,110 @@
                 </div>
             }
 
-            <!-- 0. Regalo Deseado y Referencia Visual (Foto del regalo + URL) -->
+            <!-- 0. Propuestas de Regalo Deseado (Carrusel Interactivo + Modal de Imagen) -->
             @if (Person.HasGiftReference)
             {
+                var proposals = Person.GiftProposalsList;
+                var safeIdx = proposals.Count > 0 ? Math.Clamp(currentProposalIndex, 0, proposals.Count - 1) : 0;
+                var activeProp = proposals[safeIdx];
+
                 <div class="p-3 rounded-4 mb-4 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border: 2px solid var(--bnc-orange-border);">
                     <div class="d-flex align-items-center justify-content-between mb-3">
                         <h5 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--bnc-navy-dark);">
                             <span class="icon-box-sm text-white rounded-circle" style="background-color: var(--bnc-orange);">
                                 <SvgIcon Name="gift" Size="15" />
                             </span>
-                            <span>Regalo Deseado / Referencia</span>
+                            <span>Propuestas de Regalo Deseado</span>
                         </h5>
-                        <span class="badge text-white" style="background-color: var(--bnc-orange);">Sugerencia Directa</span>
+                        <span class="badge text-white" style="background-color: var(--bnc-orange);">
+                            @(proposals.Count == 1 ? "1 Propuesta" : $"{safeIdx + 1} de {proposals.Count}")
+                        </span>
                     </div>
 
-                    @if (!string.IsNullOrWhiteSpace(Person.GiftImagePath))
-                    {
-                        <div class="text-center bg-white p-2 rounded-3 border mb-3 shadow-sm">
-                            <a href="@Person.GiftImagePath" target="_blank" title="Haz clic para ampliar la imagen del regalo">
-                                <img src="@Person.GiftImagePath" 
-                                     alt="Regalo deseado por @Person.FullName" 
-                                     class="img-fluid rounded-2" 
-                                     style="max-height: 220px; object-fit: contain;" />
-                            </a>
-                            <div class="small text-muted mt-1">Haz clic en la imagen para verla en tamaño completo</div>
-                        </div>
-                    }
+                    <div class="bg-white p-3 rounded-3 border shadow-sm position-relative">
+                        <!-- Barra superior del carrusel si hay múltiples propuestas -->
+                        @if (proposals.Count > 1)
+                        {
+                            <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom">
+                                <button type="button"
+                                        class="bnc-carousel-nav-btn"
+                                        title="Propuesta anterior"
+                                        @onclick="() => PrevProposal(proposals.Count)">
+                                    <SvgIcon Name="chevron-left" Size="18" />
+                                </button>
 
-                    @if (!string.IsNullOrWhiteSpace(Person.GiftReferenceUrl))
-                    {
-                        <a href="@GetSafeUrl(Person.GiftReferenceUrl)" 
-                           target="_blank" 
-                           rel="noopener noreferrer" 
-                           class="btn btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
-                            <SvgIcon Name="external-link" Size="16" />
-                            <span>Abrir Enlace de Referencia del Regalo</span>
-                        </a>
-                        <div class="text-truncate small text-muted mt-2 px-1">
-                            <SvgIcon Name="link" Size="12" Class="me-1" />
-                            <span>@Person.GiftReferenceUrl</span>
-                        </div>
-                    }
+                                <span class="badge rounded-pill text-white px-3 py-1" style="background-color: var(--bnc-navy); font-size: 0.78rem;">
+                                    Propuesta #@(safeIdx + 1) de @proposals.Count
+                                </span>
+
+                                <button type="button"
+                                        class="bnc-carousel-nav-btn"
+                                        title="Siguiente propuesta"
+                                        @onclick="() => NextProposal(proposals.Count)">
+                                    <SvgIcon Name="chevron-right" Size="18" />
+                                </button>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(activeProp.Description))
+                        {
+                            <div class="fw-bold mb-2 text-center" style="color: var(--bnc-navy-dark); font-size: 1rem;">
+                                @activeProp.Description
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(activeProp.ImagePath))
+                        {
+                            <div class="text-center bg-light p-2 rounded-3 border mb-2">
+                                <button type="button"
+                                        class="btn p-0 border-0 bg-transparent bnc-image-preview-trigger"
+                                        title="Haz clic para ver la imagen en tamaño completo"
+                                        @onclick="() => OpenGiftImageModal(safeIdx)">
+                                    <img src="@activeProp.ImagePath" 
+                                         alt="Regalo deseado por @Person.FullName" 
+                                         class="img-fluid rounded-2" 
+                                         style="max-height: 210px; object-fit: contain;" />
+                                </button>
+                                <div class="small text-muted mt-1 d-flex align-items-center justify-content-center gap-1"
+                                     style="cursor: pointer;"
+                                     @onclick="() => OpenGiftImageModal(safeIdx)">
+                                    <SvgIcon Name="zoom-in" Size="13" Class="text-warning" />
+                                    <span>Haz clic en la imagen para verla en tamaño completo</span>
+                                </div>
+                            </div>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(activeProp.ReferenceUrl))
+                        {
+                            <a href="@GetSafeUrl(activeProp.ReferenceUrl)" 
+                               target="_blank" 
+                               rel="noopener noreferrer" 
+                               class="btn btn-sm btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
+                                <SvgIcon Name="external-link" Size="15" />
+                                <span>Abrir Enlace de Referencia</span>
+                            </a>
+                            <div class="text-truncate small text-muted mt-1 px-1 text-center">
+                                <SvgIcon Name="link" Size="12" Class="me-1" />
+                                <span>@activeProp.ReferenceUrl</span>
+                            </div>
+                        }
+
+                        <!-- Indicadores del carrusel (dots) -->
+                        @if (proposals.Count > 1)
+                        {
+                            <div class="d-flex align-items-center justify-content-center gap-2 mt-3 pt-2 border-top">
+                                @for (int d = 0; d < proposals.Count; d++)
+                                {
+                                    var dotIdx = d;
+                                    <button type="button"
+                                            class="bnc-carousel-dot @(dotIdx == safeIdx ? "active" : "")"
+                                            title="Ir a propuesta #@(dotIdx + 1)"
+                                            @onclick="() => currentProposalIndex = dotIdx">
+                                    </button>
+                                }
+                            </div>
+                        }
+                    </div>
                 </div>
             }
 
@@ -279,18 +345,205 @@
             </button>
         </div>
     </div>
+
+    <!-- Modal de Imagen en Pantalla Completa (Sin salir del flujo del sistema) -->
+    @if (isGiftImageModalOpen && Person.HasGiftReference)
+    {
+        var proposals = Person.GiftProposalsList;
+        var safeIdx = proposals.Count > 0 ? Math.Clamp(currentProposalIndex, 0, proposals.Count - 1) : 0;
+        var modalProp = proposals[safeIdx];
+
+        <div class="bnc-lightbox-backdrop" @onclick="CloseImageModal">
+            <div class="bnc-lightbox-card" @onclick:stopPropagation="true">
+                <!-- Header del Modal de Imagen -->
+                <div class="px-3 px-sm-4 py-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                        <span class="icon-box-sm text-white rounded-circle flex-shrink-0" style="background-color: var(--bnc-orange);">
+                            <SvgIcon Name="gift" Size="15" />
+                        </span>
+                        <div class="overflow-hidden">
+                            <h6 class="fw-bold mb-0 text-truncate" style="color: var(--bnc-navy-dark);">
+                                Propuesta de Regalo • @Person.FullName
+                            </h6>
+                            @if (proposals.Count > 1)
+                            {
+                                <small class="text-muted">Propuesta #@(safeIdx + 1) de @proposals.Count</small>
+                            }
+                        </div>
+                    </div>
+                    <button type="button" class="btn-close ms-2" aria-label="Cerrar imagen" @onclick="CloseImageModal"></button>
+                </div>
+
+                <!-- Contenedor Principal de Imagen con Controles de Carrusel -->
+                <div class="bnc-lightbox-img-container">
+                    @if (proposals.Count > 1)
+                    {
+                        <button type="button"
+                                class="bnc-carousel-nav-btn position-absolute start-0 ms-2 ms-sm-3"
+                                style="z-index: 2;"
+                                title="Propuesta anterior"
+                                @onclick="() => PrevProposal(proposals.Count)">
+                            <SvgIcon Name="chevron-left" Size="20" />
+                        </button>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(modalProp.ImagePath))
+                    {
+                        <img src="@modalProp.ImagePath"
+                             alt="Propuesta de regalo de @Person.FullName"
+                             class="bnc-lightbox-img" />
+                    }
+                    else
+                    {
+                        <div class="text-white-50 text-center py-5">
+                            <SvgIcon Name="gift" Size="48" Class="text-warning mb-2" />
+                            <div>Esta propuesta no incluye imagen adjunta</div>
+                        </div>
+                    }
+
+                    @if (proposals.Count > 1)
+                    {
+                        <button type="button"
+                                class="bnc-carousel-nav-btn position-absolute end-0 me-2 me-sm-3"
+                                style="z-index: 2;"
+                                title="Siguiente propuesta"
+                                @onclick="() => NextProposal(proposals.Count)">
+                            <SvgIcon Name="chevron-right" Size="20" />
+                        </button>
+                    }
+                </div>
+
+                <!-- Pie del Modal: Descripción, Enlace Referencial y Dots del Carrusel -->
+                <div class="p-3 px-sm-4 bg-white border-top">
+                    @if (!string.IsNullOrWhiteSpace(modalProp.Description))
+                    {
+                        <div class="fw-bold text-center mb-2" style="color: var(--bnc-navy-dark); font-size: 1.02rem;">
+                            @modalProp.Description
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(modalProp.ReferenceUrl))
+                    {
+                        <a href="@GetSafeUrl(modalProp.ReferenceUrl)"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="btn btn-sm btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-2 py-2 shadow-sm mb-2">
+                            <SvgIcon Name="external-link" Size="15" />
+                            <span>Abrir Enlace de Referencia</span>
+                        </a>
+                    }
+
+                    @if (proposals.Count > 1)
+                    {
+                        <div class="d-flex align-items-center justify-content-center gap-2 my-2">
+                            @for (int d = 0; d < proposals.Count; d++)
+                            {
+                                var dotIdx = d;
+                                <button type="button"
+                                        class="bnc-carousel-dot @(dotIdx == safeIdx ? "active" : "")"
+                                        title="Ir a propuesta #@(dotIdx + 1)"
+                                        @onclick="() => currentProposalIndex = dotIdx">
+                                </button>
+                            }
+                        </div>
+                    }
+
+                    <div class="text-end mt-2">
+                        <button type="button" class="btn btn-sm btn-secondary px-4" @onclick="CloseImageModal">
+                            Cerrar vista
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Modal de Foto de Perfil en Pantalla Completa -->
+    @if (isProfilePhotoModalOpen && Person.HasProfilePhoto)
+    {
+        <div class="bnc-lightbox-backdrop" @onclick="CloseImageModal">
+            <div class="bnc-lightbox-card" style="max-width: 520px;" @onclick:stopPropagation="true">
+                <div class="px-3 px-sm-4 py-3 bg-light border-bottom d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="icon-box-sm text-white rounded-circle" style="background-color: var(--bnc-navy);">
+                            <SvgIcon Name="camera" Size="15" />
+                        </span>
+                        <h6 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">@Person.FullName</h6>
+                    </div>
+                    <button type="button" class="btn-close" aria-label="Cerrar foto" @onclick="CloseImageModal"></button>
+                </div>
+                <div class="bnc-lightbox-img-container">
+                    <img src="@Person.ProfilePhotoPath"
+                         alt="@Person.FullName"
+                         class="bnc-lightbox-img" />
+                </div>
+                <div class="p-3 bg-white border-top text-end">
+                    <button type="button" class="btn btn-sm btn-secondary px-4" @onclick="CloseImageModal">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
 }
 
 @code {
     [Parameter] public Person? Person { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
+    private int? _lastPersonId;
+    private int currentProposalIndex = 0;
+    private bool isGiftImageModalOpen = false;
+    private bool isProfilePhotoModalOpen = false;
+
     private string copyButtonText = "Descargar resumen en imagen";
     private bool isCopied = false;
     private bool isGeneratingImage = false;
 
+    protected override void OnParametersSet()
+    {
+        if (Person?.Id != _lastPersonId)
+        {
+            _lastPersonId = Person?.Id;
+            currentProposalIndex = 0;
+            isGiftImageModalOpen = false;
+            isProfilePhotoModalOpen = false;
+        }
+    }
+
+    private void PrevProposal(int total)
+    {
+        if (total <= 1) return;
+        currentProposalIndex = (currentProposalIndex - 1 + total) % total;
+    }
+
+    private void NextProposal(int total)
+    {
+        if (total <= 1) return;
+        currentProposalIndex = (currentProposalIndex + 1) % total;
+    }
+
+    private void OpenGiftImageModal(int index)
+    {
+        currentProposalIndex = index;
+        isGiftImageModalOpen = true;
+    }
+
+    private void OpenProfilePhotoModal()
+    {
+        isProfilePhotoModalOpen = true;
+    }
+
+    private void CloseImageModal()
+    {
+        isGiftImageModalOpen = false;
+        isProfilePhotoModalOpen = false;
+    }
+
     private async Task CloseAsync()
     {
+        isGiftImageModalOpen = false;
+        isProfilePhotoModalOpen = false;
         await OnClose.InvokeAsync();
     }
 
@@ -319,8 +572,12 @@
             initials = Person.Initials,
             avatarColor = Person.AvatarColor ?? "#002855",
             profilePhotoUrl = !string.IsNullOrWhiteSpace(Person.ProfilePhotoPath) ? $"/{Person.ProfilePhotoPath.TrimStart('/')}" : null,
-            giftImageUrl = !string.IsNullOrWhiteSpace(Person.GiftImagePath) ? $"/{Person.GiftImagePath.TrimStart('/')}" : null,
-            giftReferenceUrl = Person.GiftReferenceUrl,
+            giftProposals = Person.GiftProposalsList.Select(p => new
+            {
+                description = p.Description,
+                referenceUrl = p.ReferenceUrl,
+                imageUrl = !string.IsNullOrWhiteSpace(p.ImagePath) ? $"/{p.ImagePath.TrimStart('/')}" : null
+            }).ToList(),
             shirtSize = Person.ShirtSize,
             shoeSize = Person.ShoeSize,
             favoriteColor = Person.FavoriteColor,

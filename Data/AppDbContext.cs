@@ -15,9 +15,12 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
+        modelBuilder.Ignore<GiftProposal>();
+
         modelBuilder.Entity<Person>(entity =>
         {
             entity.HasKey(e => e.Id);
+            entity.Ignore(e => e.GiftProposalsList);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(60);
             entity.Property(e => e.Username).HasMaxLength(60);

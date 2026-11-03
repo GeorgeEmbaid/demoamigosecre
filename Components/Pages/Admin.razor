@@ -188,11 +188,26 @@
                     </div>
                 </div>
 
-                <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @onclick="ResetSampleDataAsync" title="Restaura la lista de los 51 participantes BNC">
-                        <SvgIcon Name="refresh" Size="14" />
-                        <span>Restablecer participantes BNC</span>
+                <div class="d-flex flex-wrap align-items-center gap-2">
+                    <button type="button"
+                            class="btn btn-sm @(showResetButton ? "btn-outline-dark" : "btn-light border text-muted") d-flex align-items-center gap-1"
+                            @onclick="ToggleResetButtonVisibility"
+                            title="@(showResetButton ? "Ocultar botón de restablecimiento" : "Habilitar botón de restablecimiento")">
+                        <SvgIcon Name="@(showResetButton ? "eye-off" : "lock")" Size="14" />
+                        <span>@(showResetButton ? "Ocultar restablecer" : "Activar restablecer")</span>
                     </button>
+
+                    @if (showResetButton)
+                    {
+                        <button type="button"
+                                class="btn btn-sm btn-outline-danger d-flex align-items-center gap-1 fw-semibold"
+                                @onclick="StartResetConfirmation"
+                                title="Restaura la lista de los 51 participantes BNC (requiere doble confirmación)">
+                            <SvgIcon Name="refresh" Size="14" />
+                            <span>Restablecer participantes BNC</span>
+                        </button>
+                    }
+
                     <span class="badge py-2 px-3 rounded-pill text-white" style="background-color: var(--bnc-navy);">
                         @FilteredPeople.Count participantes
                     </span>
@@ -449,6 +464,72 @@
                 </div>
             </div>
         }
+
+        <!-- Double-Confirmation Modal for Database Reset (2 Steps) -->
+        @if (resetConfirmStep > 0)
+        {
+            <div class="modal-backdrop-custom" @onclick="CancelResetConfirmation"></div>
+            <div class="modal d-block" tabindex="-1" style="z-index: 1075;">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content shadow-lg border-0 rounded-4 overflow-hidden">
+                        @if (resetConfirmStep == 1)
+                        {
+                            <div class="modal-header border-bottom bg-warning-subtle text-warning-emphasis px-4 py-3">
+                                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                                    <SvgIcon Name="alert" Size="20" Class="text-warning-emphasis" />
+                                    <span>Confirmación 1 de 2: ¿Restablecer Participantes?</span>
+                                </h5>
+                                <button type="button" class="btn-close" @onclick="CancelResetConfirmation"></button>
+                            </div>
+                            <div class="modal-body px-4 py-3">
+                                <p class="mb-2 fw-semibold text-dark">
+                                    Estás a punto de restablecer la lista de los 51 participantes BNC a sus valores iniciales.
+                                </p>
+                                <div class="alert alert-warning py-2 px-3 small mb-0">
+                                    <strong>Atención:</strong> Se borrarán los gustos personalizados, cambios de contraseña y propuestas de regalo registradas hasta el momento.
+                                </div>
+                            </div>
+                            <div class="modal-footer border-top bg-light px-4 py-3 d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="CancelResetConfirmation">
+                                    Cancelar
+                                </button>
+                                <button type="button" class="btn btn-warning fw-bold px-3 d-flex align-items-center gap-2" @onclick="ProceedToSecondResetConfirmation">
+                                    <span>Continuar (Confirmación 1/2)</span>
+                                    <SvgIcon Name="arrow-right" Size="16" />
+                                </button>
+                            </div>
+                        }
+                        else if (resetConfirmStep == 2)
+                        {
+                            <div class="modal-header border-bottom bg-danger text-white px-4 py-3">
+                                <h5 class="modal-title fw-bold d-flex align-items-center gap-2">
+                                    <SvgIcon Name="alert" Size="20" Class="text-white" />
+                                    <span>Confirmación 2 de 2 (Definitiva)</span>
+                                </h5>
+                                <button type="button" class="btn-close btn-close-white" @onclick="CancelResetConfirmation"></button>
+                            </div>
+                            <div class="modal-body px-4 py-3">
+                                <p class="mb-2 fw-bold text-danger">
+                                    ¿Confirmas por segunda y última vez que deseas reiniciar la base de datos ahora mismo?
+                                </p>
+                                <small class="text-muted d-block">
+                                    Esta acción es inmediata y restablecerá todos los usuarios y contraseñas al formato inicial (<code>apellido2026</code>).
+                                </small>
+                            </div>
+                            <div class="modal-footer border-top bg-light px-4 py-3 d-flex justify-content-between">
+                                <button type="button" class="btn btn-outline-secondary" @onclick="CancelResetConfirmation">
+                                    No, Cancelar y Conservar Datos
+                                </button>
+                                <button type="button" class="btn btn-danger fw-bold px-4 d-flex align-items-center gap-2" @onclick="ExecuteResetSampleDataAsync">
+                                    <SvgIcon Name="refresh" Size="16" />
+                                    <span>Sí, Restablecer Definitivamente</span>
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -464,6 +545,8 @@
     private bool isEditModalOpen = false;
     private Person? personToEdit;
     private Person? personToDelete;
+    private bool showResetButton = false;
+    private int resetConfirmStep = 0;
     private string? statusMessage;
 
     private List<Person> FilteredPeople => string.IsNullOrWhiteSpace(tableSearch)
@@ -585,8 +668,34 @@
         }
     }
 
-    private async Task ResetSampleDataAsync()
+    private void ToggleResetButtonVisibility()
     {
+        showResetButton = !showResetButton;
+        if (!showResetButton)
+        {
+            resetConfirmStep = 0;
+        }
+    }
+
+    private void StartResetConfirmation()
+    {
+        resetConfirmStep = 1;
+    }
+
+    private void ProceedToSecondResetConfirmation()
+    {
+        resetConfirmStep = 2;
+    }
+
+    private void CancelResetConfirmation()
+    {
+        resetConfirmStep = 0;
+    }
+
+    private async Task ExecuteResetSampleDataAsync()
+    {
+        resetConfirmStep = 0;
+        showResetButton = false;
         await PersonService.ResetSampleDataAsync();
         await LoadDataAsync();
         ShowToast("Participantes BNC y credenciales restaurados exitosamente");

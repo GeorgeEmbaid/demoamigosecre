@@ -73,11 +73,13 @@ window.bncSummaryGenerator = {
     },
 
     downloadPersonSummary: async function (data) {
-        // 1. Cargar imágenes necesarias (Logo BNC, Foto de Perfil, Imagen de Regalo)
-        const [logoImg, profileImg, giftImg] = await Promise.all([
+        const rawProposals = Array.isArray(data.giftProposals) ? data.giftProposals : [];
+
+        // 1. Cargar imágenes necesarias (Logo BNC, Foto de Perfil e Imágenes de cada Propuesta de Regalo)
+        const [logoImg, profileImg, ...proposalImgs] = await Promise.all([
             this.loadImage("/images/BNC_Logo.png"),
             this.loadImage(data.profilePhotoUrl),
-            this.loadImage(data.giftImageUrl)
+            ...rawProposals.map((p) => this.loadImage(p.imageUrl))
         ]);
 
         const likes = Array.isArray(data.likes) && data.likes.length > 0 ? data.likes : ["Sin gustos registrados aún"];
@@ -154,29 +156,56 @@ window.bncSummaryGenerator = {
         const dislikesLayout = measureSection(dislikes, "✕");
         const allergiesLayout = measureSection(allergies, "!");
 
-        // Precalcular altura del bloque de Regalo Deseado (si tiene imagen o URL)
-        const hasGift = Boolean(giftImg || data.giftReferenceUrl);
-        let giftBlockH = 0;
-        let giftUrlLines = [];
-        let giftImgDrawW = 0;
-        let giftImgDrawH = 0;
+        // Precalcular altura del bloque de Propuestas de Regalo Deseado
+        const measuredProposals = rawProposals.map((p, idx) => {
+            const img = proposalImgs[idx];
+            let descLines = [];
+            let urlLines = [];
+            let imgDrawW = 0;
+            let imgDrawH = 0;
+            let cardH = 24; // padding vertical interno de la tarjeta de propuesta
 
+            if (rawProposals.length > 1) {
+                cardH += 26; // badge "Propuesta #N"
+            }
+
+            if (p.description && String(p.description).trim().length > 0) {
+                mCtx.font = `bold 15.5px 'Segoe UI', Roboto, Arial, sans-serif`;
+                descLines = this.wrapText(mCtx, String(p.description).trim(), innerSectionW - 32);
+                cardH += descLines.length * 22 + 10;
+            }
+
+            if (img) {
+                const maxImgW = Math.min(340, innerSectionW - 40);
+                const maxImgH = 200;
+                const ratio = Math.min(maxImgW / img.width, maxImgH / img.height, 1);
+                imgDrawW = Math.round(img.width * ratio);
+                imgDrawH = Math.round(img.height * ratio);
+                cardH += imgDrawH + 18;
+            }
+
+            if (p.referenceUrl && String(p.referenceUrl).trim().length > 0) {
+                mCtx.font = `600 13px 'Segoe UI', Roboto, Arial, sans-serif`;
+                urlLines = this.wrapText(mCtx, "URL: " + String(p.referenceUrl).trim(), innerSectionW - 36);
+                cardH += urlLines.length * 19 + 14;
+            }
+
+            return {
+                index: idx + 1,
+                descLines,
+                urlLines,
+                img,
+                imgDrawW,
+                imgDrawH,
+                cardH
+            };
+        });
+
+        const hasGift = measuredProposals.length > 0;
+        let giftBlockH = 0;
         if (hasGift) {
-            giftBlockH = 58; // título del bloque
-            if (giftImg) {
-                const maxImgW = Math.min(360, innerSectionW - 20);
-                const maxImgH = 220;
-                const ratio = Math.min(maxImgW / giftImg.width, maxImgH / giftImg.height, 1);
-                giftImgDrawW = Math.round(giftImg.width * ratio);
-                giftImgDrawH = Math.round(giftImg.height * ratio);
-                giftBlockH += giftImgDrawH + 24;
-            }
-            if (data.giftReferenceUrl) {
-                mCtx.font = `600 13.5px 'Segoe UI', Roboto, Arial, sans-serif`;
-                giftUrlLines = this.wrapText(mCtx, "Enlace de referencia: " + data.giftReferenceUrl, innerSectionW - 24);
-                giftBlockH += giftUrlLines.length * 19 + 22;
-            }
-            giftBlockH += 14;
+            const totalCardsH = measuredProposals.reduce((acc, p) => acc + p.cardH, 0) + Math.max(0, measuredProposals.length - 1) * 14;
+            giftBlockH = 54 + totalCardsH + sectionPad;
         }
 
         // Precalcular altura de Tallas / Color Favorito
@@ -352,7 +381,7 @@ window.bncSummaryGenerator = {
             curY += quickBarH + gapBetweenBlocks;
         }
 
-        // 6. Bloque de Regalo Deseado (Imagen + URL Referencial)
+        // 6. Bloque de Propuestas de Regalo Deseado (Descripción + Imagen + URL Referencial)
         if (hasGift) {
             this.roundRect(ctx, outerPad, curY, contentW, giftBlockH, 14);
             ctx.fillStyle = "#fff7ed";
@@ -363,34 +392,76 @@ window.bncSummaryGenerator = {
 
             ctx.fillStyle = "#002855";
             ctx.font = "bold 17px 'Segoe UI', Roboto, Arial, sans-serif";
-            ctx.fillText("Regalo Deseado / Referencia Visual", outerPad + sectionPad, curY + 18);
+            ctx.fillText("Propuestas de Regalo Deseado", outerPad + sectionPad, curY + 18);
+
+            ctx.textAlign = "right";
+            ctx.fillStyle = "#ea580c";
+            ctx.font = "bold 12.5px 'Segoe UI', Roboto, Arial, sans-serif";
+            ctx.fillText(
+                `${measuredProposals.length} ${measuredProposals.length === 1 ? "propuesta" : "propuestas"}`,
+                outerPad + contentW - sectionPad,
+                curY + 20
+            );
+            ctx.textAlign = "left";
 
             let innerGiftY = curY + 52;
-            if (giftImg) {
-                const imgX = outerPad + (contentW - giftImgDrawW) / 2;
-                this.roundRect(ctx, imgX - 8, innerGiftY - 6, giftImgDrawW + 16, giftImgDrawH + 12, 10);
+            for (const prop of measuredProposals) {
+                this.roundRect(ctx, outerPad + sectionPad, innerGiftY, innerSectionW, prop.cardH, 10);
                 ctx.fillStyle = "#ffffff";
                 ctx.fill();
-                ctx.strokeStyle = "#e2e8f0";
                 ctx.lineWidth = 1;
-                ctx.stroke();
-
-                ctx.drawImage(giftImg, imgX, innerGiftY, giftImgDrawW, giftImgDrawH);
-                innerGiftY += giftImgDrawH + 18;
-            }
-
-            if (giftUrlLines.length > 0) {
-                this.roundRect(ctx, outerPad + sectionPad, innerGiftY, innerSectionW, giftUrlLines.length * 19 + 14, 8);
-                ctx.fillStyle = "#ffffff";
-                ctx.fill();
                 ctx.strokeStyle = "#fed7aa";
                 ctx.stroke();
 
-                ctx.fillStyle = "#c2410c";
-                ctx.font = "600 13.5px 'Segoe UI', Roboto, Arial, sans-serif";
-                giftUrlLines.forEach((line, lIdx) => {
-                    ctx.fillText(line, outerPad + sectionPad + 12, innerGiftY + 8 + lIdx * 19);
-                });
+                let cardCurY = innerGiftY + 12;
+
+                if (measuredProposals.length > 1) {
+                    this.roundRect(ctx, outerPad + sectionPad + 14, cardCurY, 96, 20, 10);
+                    ctx.fillStyle = "#002855";
+                    ctx.fill();
+                    ctx.fillStyle = "#ffffff";
+                    ctx.font = "bold 11px 'Segoe UI', Roboto, Arial, sans-serif";
+                    ctx.fillText(`Propuesta #${prop.index}`, outerPad + sectionPad + 24, cardCurY + 4);
+                    cardCurY += 26;
+                }
+
+                if (prop.descLines.length > 0) {
+                    ctx.fillStyle = "#002855";
+                    ctx.font = "bold 15.5px 'Segoe UI', Roboto, Arial, sans-serif";
+                    prop.descLines.forEach((line, dIdx) => {
+                        ctx.fillText(line, outerPad + sectionPad + 14, cardCurY + dIdx * 22);
+                    });
+                    cardCurY += prop.descLines.length * 22 + 10;
+                }
+
+                if (prop.img) {
+                    const imgX = outerPad + sectionPad + (innerSectionW - prop.imgDrawW) / 2;
+                    this.roundRect(ctx, imgX - 6, cardCurY - 4, prop.imgDrawW + 12, prop.imgDrawH + 8, 8);
+                    ctx.fillStyle = "#f8fafc";
+                    ctx.fill();
+                    ctx.strokeStyle = "#e2e8f0";
+                    ctx.lineWidth = 1;
+                    ctx.stroke();
+
+                    ctx.drawImage(prop.img, imgX, cardCurY, prop.imgDrawW, prop.imgDrawH);
+                    cardCurY += prop.imgDrawH + 16;
+                }
+
+                if (prop.urlLines.length > 0) {
+                    this.roundRect(ctx, outerPad + sectionPad + 12, cardCurY, innerSectionW - 24, prop.urlLines.length * 19 + 10, 6);
+                    ctx.fillStyle = "#fff7ed";
+                    ctx.fill();
+                    ctx.strokeStyle = "#fed7aa";
+                    ctx.stroke();
+
+                    ctx.fillStyle = "#c2410c";
+                    ctx.font = "600 13px 'Segoe UI', Roboto, Arial, sans-serif";
+                    prop.urlLines.forEach((line, lIdx) => {
+                        ctx.fillText(line, outerPad + sectionPad + 20, cardCurY + 6 + lIdx * 19);
+                    });
+                }
+
+                innerGiftY += prop.cardH + 14;
             }
 
             curY += giftBlockH + gapBetweenBlocks;

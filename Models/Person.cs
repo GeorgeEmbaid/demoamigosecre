@@ -1,8 +1,24 @@
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 
 namespace AmigoSecreto.Models;
+
+[NotMapped]
+public class GiftProposal
+{
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+    public string Description { get; set; } = string.Empty;
+    public string? ReferenceUrl { get; set; }
+    public string? ImagePath { get; set; }
+
+    public bool HasContent =>
+        !string.IsNullOrWhiteSpace(Description) ||
+        !string.IsNullOrWhiteSpace(ReferenceUrl) ||
+        !string.IsNullOrWhiteSpace(ImagePath);
+}
 
 public class Person
 {
@@ -48,15 +64,13 @@ public class Person
     public string? ProfilePhotoPath { get; set; }
 
     /// <summary>
-    /// Ruta relativa a wwwroot de la imagen del regalo que le gustaría recibir
+    /// Ruta relativa de la imagen principal del regalo deseado
     /// </summary>
-    [StringLength(300)]
     public string? GiftImagePath { get; set; }
 
     /// <summary>
-    /// URL referencial del regalo deseado (ej. tienda online, catálogo, Instagram, Amazon, MercadoLibre)
+    /// Propuestas de regalo deseado serializadas en JSON (o URL referencial única heredada)
     /// </summary>
-    [StringLength(500)]
     public string? GiftReferenceUrl { get; set; }
 
     /// <summary>
@@ -101,7 +115,80 @@ public class Person
         !Dislikes.Contains("Pendiente por definir", StringComparison.OrdinalIgnoreCase);
 
     public bool HasProfilePhoto => !string.IsNullOrWhiteSpace(ProfilePhotoPath);
-    public bool HasGiftReference => !string.IsNullOrWhiteSpace(GiftImagePath) || !string.IsNullOrWhiteSpace(GiftReferenceUrl);
+    public bool HasGiftReference => GiftProposalsList.Any(p => p.HasContent);
+
+    [NotMapped]
+    public List<GiftProposal> GiftProposalsList => GetGiftProposals();
+
+    public List<GiftProposal> GetGiftProposals()
+    {
+        if (!string.IsNullOrWhiteSpace(GiftReferenceUrl))
+        {
+            var trimmed = GiftReferenceUrl.Trim();
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+            {
+                try
+                {
+                    var parsed = JsonSerializer.Deserialize<List<GiftProposal>>(trimmed);
+                    if (parsed != null)
+                    {
+                        var valid = parsed.Where(p => p.HasContent).ToList();
+                        if (valid.Count == 0 && !string.IsNullOrWhiteSpace(GiftImagePath))
+                        {
+                            valid.Add(new GiftProposal
+                            {
+                                Id = "default",
+                                ImagePath = GiftImagePath
+                            });
+                        }
+                        return valid;
+                    }
+                }
+                catch { }
+            }
+        }
+
+        // Compatibilidad con regalo único anterior
+        if (!string.IsNullOrWhiteSpace(GiftImagePath) || !string.IsNullOrWhiteSpace(GiftReferenceUrl))
+        {
+            return new List<GiftProposal>
+            {
+                new GiftProposal
+                {
+                    Id = "default",
+                    Description = string.Empty,
+                    ReferenceUrl = GiftReferenceUrl,
+                    ImagePath = GiftImagePath
+                }
+            };
+        }
+
+        return new List<GiftProposal>();
+    }
+
+    public void SetGiftProposals(IEnumerable<GiftProposal> proposals)
+    {
+        var cleanList = proposals
+            .Select(p => new GiftProposal
+            {
+                Id = string.IsNullOrWhiteSpace(p.Id) ? Guid.NewGuid().ToString("N")[..8] : p.Id.Trim(),
+                Description = p.Description?.Trim() ?? string.Empty,
+                ReferenceUrl = string.IsNullOrWhiteSpace(p.ReferenceUrl) ? null : p.ReferenceUrl.Trim(),
+                ImagePath = string.IsNullOrWhiteSpace(p.ImagePath) ? null : p.ImagePath.Trim()
+            })
+            .Where(p => p.HasContent)
+            .ToList();
+
+        if (cleanList.Count == 0)
+        {
+            GiftImagePath = null;
+            GiftReferenceUrl = null;
+            return;
+        }
+
+        GiftImagePath = cleanList.FirstOrDefault(p => !string.IsNullOrWhiteSpace(p.ImagePath))?.ImagePath;
+        GiftReferenceUrl = JsonSerializer.Serialize(cleanList);
+    }
 
     /// <summary>
     /// Indica si el participante aún conserva la contraseña inicial por defecto ({apellido}2026) y debe cambiarla inmediatamente

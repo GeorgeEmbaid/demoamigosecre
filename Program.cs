@@ -63,6 +63,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseStaticFiles();
 
 app.UseAntiforgery();
 
@@ -80,6 +81,16 @@ app.MapGet("/imagenes-memoria/{personKey}/perfil", (string personKey, IImageStor
 app.MapGet("/imagenes-memoria/{personKey}/regalo", (string personKey, IImageStorageService imageStorage) =>
 {
     var (bytes, contentType) = imageStorage.GetGiftImageFromMemory(personKey);
+    if (bytes is null || bytes.Length == 0)
+    {
+        return Results.NotFound();
+    }
+    return Results.File(bytes, contentType);
+});
+
+app.MapGet("/imagenes-memoria/{personKey}/regalo/{proposalId}", (string personKey, string proposalId, IImageStorageService imageStorage) =>
+{
+    var (bytes, contentType) = imageStorage.GetGiftProposalImageFromMemory(personKey, proposalId);
     if (bytes is null || bytes.Length == 0)
     {
         return Results.NotFound();

@@ -6,7 +6,7 @@
     <div class="modal-backdrop-custom" @onclick="HandleCancel"></div>
     <div class="bnc-modal-wrapper" tabindex="-1" role="dialog" aria-modal="true">
         <div class="bnc-modal-dialog">
-            <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" class="bnc-modal-content shadow-lg">
+            <EditForm Model="Model" OnValidSubmit="HandleValidSubmit" OnInvalidSubmit="HandleInvalidSubmit" class="bnc-modal-content shadow-lg">
                 <DataAnnotationsValidator />
 
                 <!-- Sticky Modal Header -->
@@ -19,7 +19,7 @@
                             <h5 class="modal-title fw-bold mb-0 text-truncate" style="color: var(--bnc-navy-dark);">
                                 @if (!IsAdminMode)
                                 {
-                                    <span>Mi Perfil, Gustos y Regalo Deseado</span>
+                                    <span>Mi Perfil, Gustos y Propuestas de Regalo</span>
                                 }
                                 else
                                 {
@@ -28,11 +28,53 @@
                             </h5>
                             @if (!IsAdminMode)
                             {
-                                <small class="text-muted d-block text-truncate">Completa tus gustos y sube tu foto para tu Amigo Secreto</small>
+                                <small class="text-muted d-block text-truncate">Navega por las pestañas para completar tu perfil, tus gustos y tus propuestas de regalo</small>
                             }
                         </div>
                     </div>
                     <button type="button" class="btn-close ms-2 flex-shrink-0" aria-label="Cerrar" @onclick="HandleCancel"></button>
+                </div>
+
+                <!-- 3-Tabs Navigation Bar -->
+                <div class="bnc-tabs-bar" role="tablist">
+                    <button type="button"
+                            role="tab"
+                            aria-selected="@(activeTab == 1)"
+                            class="bnc-tab-btn @(activeTab == 1 ? "active" : "")"
+                            @onclick="() => activeTab = 1">
+                        <span class="bnc-tab-icon d-inline-flex">
+                            <SvgIcon Name="user" Size="16" />
+                        </span>
+                        <span>1. Perfil</span>
+                    </button>
+
+                    <button type="button"
+                            role="tab"
+                            aria-selected="@(activeTab == 2)"
+                            class="bnc-tab-btn @(activeTab == 2 ? "active" : "")"
+                            @onclick="() => activeTab = 2">
+                        <span class="bnc-tab-icon d-inline-flex">
+                            <SvgIcon Name="heart" Size="16" />
+                        </span>
+                        <span>2. Gustos</span>
+                    </button>
+
+                    <button type="button"
+                            role="tab"
+                            aria-selected="@(activeTab == 3)"
+                            class="bnc-tab-btn @(activeTab == 3 ? "active" : "")"
+                            @onclick="() => activeTab = 3">
+                        <span class="bnc-tab-icon d-inline-flex">
+                            <SvgIcon Name="gift" Size="16" />
+                        </span>
+                        <span>3. Regalo Deseado</span>
+                        @if (GiftProposals.Count(p => p.HasContent) > 0)
+                        {
+                            <span class="badge rounded-pill text-white ms-1" style="background-color: var(--bnc-orange); font-size: 0.7rem;">
+                                @GiftProposals.Count(p => p.HasContent)
+                            </span>
+                        }
+                    </button>
                 </div>
 
                 <!-- Scrollable Modal Body -->
@@ -45,215 +87,274 @@
                         </div>
                     }
 
-                    @if (IsAdminMode)
+                    @if (activeTab == 1)
                     {
-                        <!-- Basic Information Row (Admin Mode - Mobile First) -->
-                        <div class="row g-2 g-sm-3 mb-3">
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Nombre *</label>
-                                <InputText class="form-control" @bind-Value="Model.FirstName" @bind-Value:after="OnNameChangedByAdmin" />
-                                <ValidationMessage For="@(() => Model.FirstName)" class="text-danger small" />
-                            </div>
-                            <div class="col-12 col-sm-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Apellido *</label>
-                                <InputText class="form-control" @bind-Value="Model.LastName" @bind-Value:after="OnNameChangedByAdmin" />
-                                <ValidationMessage For="@(() => Model.LastName)" class="text-danger small" />
-                            </div>
-                        </div>
-
-                        <!-- Credentials Section (Admin Only: Modify Username & Password) -->
-                        <div class="p-3 mb-3 rounded-3 border" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
-                            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                                <span class="fw-bold small d-flex align-items-center gap-1" style="color: var(--bnc-navy);">
-                                    <SvgIcon Name="lock" Size="15" />
-                                    <span>Credenciales de Acceso del Participante</span>
-                                </span>
-                            </div>
-                            <div class="row g-2 g-sm-3">
+                        <!-- TAB 1: PERFIL -->
+                        @if (IsAdminMode)
+                        {
+                            <!-- Basic Information Row (Admin Mode - Mobile First) -->
+                            <div class="row g-2 g-sm-3 mb-3">
                                 <div class="col-12 col-sm-6">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">Usuario de Acceso</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white text-muted">
-                                            <SvgIcon Name="user" Size="15" />
-                                        </span>
-                                        <InputText class="form-control" @bind-Value="Model.Username" />
-                                    </div>
+                                    <label class="form-label fw-semibold text-secondary small mb-1">Nombre *</label>
+                                    <InputText class="form-control" @bind-Value="Model.FirstName" @bind-Value:after="OnNameChangedByAdmin" />
+                                    <ValidationMessage For="@(() => Model.FirstName)" class="text-danger small" />
                                 </div>
                                 <div class="col-12 col-sm-6">
-                                    <label class="form-label fw-semibold text-secondary small mb-1">Contraseña</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text bg-white text-muted">
-                                            <SvgIcon Name="key" Size="15" />
-                                        </span>
-                                        <InputText class="form-control" @bind-Value="Model.Password" />
+                                    <label class="form-label fw-semibold text-secondary small mb-1">Apellido *</label>
+                                    <InputText class="form-control" @bind-Value="Model.LastName" @bind-Value:after="OnNameChangedByAdmin" />
+                                    <ValidationMessage For="@(() => Model.LastName)" class="text-danger small" />
+                                </div>
+                            </div>
+
+                            <!-- Credentials Section (Admin Only: Modify Username & Password) -->
+                            <div class="p-3 mb-3 rounded-3 border" style="background-color: #f8fafc; border-color: #cbd5e1 !important;">
+                                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
+                                    <span class="fw-bold small d-flex align-items-center gap-1" style="color: var(--bnc-navy);">
+                                        <SvgIcon Name="lock" Size="15" />
+                                        <span>Credenciales de Acceso del Participante</span>
+                                    </span>
+                                </div>
+                                <div class="row g-2 g-sm-3">
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label fw-semibold text-secondary small mb-1">Usuario de Acceso</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white text-muted">
+                                                <SvgIcon Name="user" Size="15" />
+                                            </span>
+                                            <InputText class="form-control" @bind-Value="Model.Username" />
+                                        </div>
+                                    </div>
+                                    <div class="col-12 col-sm-6">
+                                        <label class="form-label fw-semibold text-secondary small mb-1">Contraseña</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white text-muted">
+                                                <SvgIcon Name="key" Size="15" />
+                                            </span>
+                                            <InputText class="form-control" @bind-Value="Model.Password" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    }
+                        }
 
-                    <!-- Photo & Gift Image Upload Section (Mobile First 1-col to 2-col) -->
-                    <div class="row g-3 mb-3">
-                        <!-- 1. Profile Photo Card -->
-                        <div class="col-12 col-md-6">
-                            <div class="p-3 rounded-3 border bg-white h-100 d-flex flex-column justify-content-between shadow-sm">
-                                <div>
-                                    <label class="form-label fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--bnc-navy);">
-                                        <SvgIcon Name="camera" Size="16" />
-                                        <span>Foto de Perfil</span>
+                        <!-- Foto de Perfil Card -->
+                        <div class="p-3 rounded-3 border bg-white mb-3 shadow-sm">
+                            <label class="form-label fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--bnc-navy);">
+                                <SvgIcon Name="camera" Size="16" />
+                                <span>Foto de Perfil</span>
+                            </label>
+
+                            <div class="d-flex flex-wrap flex-sm-nowrap align-items-center gap-3 my-1">
+                                @if (!string.IsNullOrWhiteSpace(Model.ProfilePhotoPath))
+                                {
+                                    <img src="@Model.ProfilePhotoPath" 
+                                         alt="Foto de perfil" 
+                                         class="rounded-circle border shadow-sm" 
+                                         style="width: 72px; height: 72px; object-fit: cover; flex-shrink: 0;" />
+                                }
+                                else
+                                {
+                                    <div class="avatar-circle" style="width: 72px; height: 72px; font-size: 1.4rem; background: linear-gradient(135deg, @(Model.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                                        @Model.Initials
+                                    </div>
+                                }
+
+                                <div class="flex-grow-1">
+                                    <label class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center gap-2 px-3 py-2 mb-1" style="cursor: pointer; border-color: var(--bnc-navy); color: var(--bnc-navy);">
+                                        <SvgIcon Name="upload" Size="14" />
+                                        <span>@(isUploadingProfile ? "Subiendo..." : "Subir Foto de Perfil")</span>
+                                        <InputFile OnChange="HandleProfilePhotoUpload" accept="image/*" class="d-none" />
                                     </label>
-                                </div>
-
-                                <div class="d-flex align-items-center gap-3 my-1">
                                     @if (!string.IsNullOrWhiteSpace(Model.ProfilePhotoPath))
                                     {
-                                        <img src="@Model.ProfilePhotoPath" 
-                                             alt="Foto de perfil" 
-                                             class="rounded-circle border shadow-sm" 
-                                             style="width: 64px; height: 64px; object-fit: cover; flex-shrink: 0;" />
-                                    }
-                                    else
-                                    {
-                                        <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.3rem; background: linear-gradient(135deg, @(Model.AvatarColor ?? "#002855"), var(--bnc-orange));">
-                                            @Model.Initials
-                                        </div>
-                                    }
-
-                                    <div class="flex-grow-1">
-                                        <label class="btn btn-sm btn-outline-primary w-100 d-flex align-items-center justify-content-center gap-1 py-2 mb-1" style="cursor: pointer; border-color: var(--bnc-navy); color: var(--bnc-navy);">
-                                            <SvgIcon Name="upload" Size="14" />
-                                            <span>@(isUploadingProfile ? "Subiendo..." : "Subir Foto")</span>
-                                            <InputFile OnChange="HandleProfilePhotoUpload" accept="image/*" class="d-none" />
-                                        </label>
-                                        @if (!string.IsNullOrWhiteSpace(Model.ProfilePhotoPath))
-                                        {
-                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 small w-100 text-decoration-none" @onclick="RemoveProfilePhotoAsync">
+                                        <div class="mt-1">
+                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 small text-decoration-none" @onclick="RemoveProfilePhotoAsync">
                                                 Quitar foto
                                             </button>
-                                        }
-                                    </div>
+                                        </div>
+                                    }
                                 </div>
                             </div>
                         </div>
 
-                        <!-- 2. Gift Image & Reference URL Card -->
-                        <div class="col-12 col-md-6">
-                            <div class="p-3 rounded-3 border bg-white h-100 d-flex flex-column justify-content-between shadow-sm" style="border-color: var(--bnc-orange-border) !important; background-color: #fffaf5 !important;">
-                                <div>
-                                    <label class="form-label fw-bold mb-2 d-flex align-items-center gap-2" style="color: var(--bnc-orange);">
-                                        <SvgIcon Name="image" Size="16" />
-                                        <span>Regalo Deseado (Imagen y URL)</span>
-                                    </label>
-                                </div>
+                        <!-- Sizes & Favorite Color -->
+                        <div class="row g-2 g-sm-3 mb-3 p-2 p-sm-3 bg-light rounded-3 border mx-0">
+                            <div class="col-6 col-sm-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="shirt" Size="14" Class="text-muted" /> Talla Camisa
+                                </label>
+                                <InputText class="form-control form-control-sm" @bind-Value="Model.ShirtSize" />
+                            </div>
+                            <div class="col-6 col-sm-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="tag" Size="14" Class="text-muted" /> Calzado
+                                </label>
+                                <InputText class="form-control form-control-sm" @bind-Value="Model.ShoeSize" />
+                            </div>
+                            <div class="col-12 col-sm-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
+                                    <SvgIcon Name="palette" Size="14" Class="text-muted" /> Color Favorito
+                                </label>
+                                <InputText class="form-control form-control-sm" @bind-Value="Model.FavoriteColor" />
+                            </div>
+                        </div>
 
-                                <div class="d-flex align-items-center gap-3 my-1">
-                                    @if (!string.IsNullOrWhiteSpace(Model.GiftImagePath))
-                                    {
-                                        <img src="@Model.GiftImagePath" 
-                                             alt="Imagen del regalo" 
-                                             class="rounded-3 border shadow-sm" 
-                                             style="width: 64px; height: 64px; object-fit: cover; flex-shrink: 0; background: white;" />
-                                    }
-                                    else
-                                    {
-                                        <div class="rounded-3 border d-flex align-items-center justify-content-center bg-white text-muted" style="width: 64px; height: 64px; flex-shrink: 0;">
-                                            <SvgIcon Name="gift" Size="26" Class="text-warning" />
-                                        </div>
-                                    }
+                        <!-- Section: Notas Adicionales -->
+                        <div class="mb-2">
+                            <label class="form-label fw-semibold text-secondary small mb-1">Notas extras / Mensaje para tu Amigo Secreto</label>
+                            <InputTextArea class="form-control" rows="2" @bind-Value="Model.Notes" />
+                        </div>
+                    }
+                    else if (activeTab == 2)
+                    {
+                        <!-- TAB 2: GUSTOS Y ALERGIAS -->
+                        <!-- Section: Cosas que le gustan -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-success mb-1 d-flex align-items-center gap-1">
+                                <SvgIcon Name="gift" Size="16" />
+                                <span>Cosas que @(IsAdminMode ? "le gustan" : "me gustan")</span>
+                            </label>
+                            <InputTextArea class="form-control border-success-subtle" 
+                                           rows="4" 
+                                           @bind-Value="Model.Likes" />
+                        </div>
 
-                                    <div class="flex-grow-1">
-                                        <label class="btn btn-sm btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-1 py-2 mb-1" style="cursor: pointer;">
-                                            <SvgIcon Name="upload" Size="14" />
-                                            <span>@(isUploadingGift ? "Subiendo..." : "Subir Imagen Regalo")</span>
-                                            <InputFile OnChange="HandleGiftImageUpload" accept="image/*" class="d-none" />
-                                        </label>
-                                        @if (!string.IsNullOrWhiteSpace(Model.GiftImagePath))
+                        <!-- Section: Cosas que NO le gustan -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold text-danger mb-1 d-flex align-items-center gap-1">
+                                <SvgIcon Name="dislike" Size="16" />
+                                <span>Cosas que NO @(IsAdminMode ? "le gustan" : "me gustan")</span>
+                            </label>
+                            <InputTextArea class="form-control border-danger-subtle" 
+                                           rows="3" 
+                                           @bind-Value="Model.Dislikes" />
+                        </div>
+
+                        <!-- Section: Alergias -->
+                        <div class="mb-2">
+                            <label class="form-label fw-bold text-warning-emphasis mb-1 d-flex align-items-center gap-1">
+                                <SvgIcon Name="alert" Size="16" />
+                                <span>A qué @(IsAdminMode ? "es alérgico" : "soy alérgico")</span>
+                            </label>
+                            <InputTextArea class="form-control border-warning-subtle" 
+                                           rows="2" 
+                                           @bind-Value="Model.Allergies" />
+                        </div>
+                    }
+                    else if (activeTab == 3)
+                    {
+                        <!-- TAB 3: PROPUESTAS DE REGALO DESEADO -->
+                        <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--bnc-navy-dark);">
+                                    <SvgIcon Name="gift" Size="17" Class="text-warning" />
+                                    <span>Propuestas de Regalo Deseado</span>
+                                </h6>
+                                <small class="text-muted">Puedes agregar una o varias opciones de regalo con su descripción, enlace e imagen.</small>
+                            </div>
+                            <button type="button"
+                                    class="btn btn-sm btn-bnc-orange d-inline-flex align-items-center gap-1 px-3 py-2"
+                                    @onclick="AddGiftProposal">
+                                <SvgIcon Name="plus" Size="14" />
+                                <span>Agregar Propuesta</span>
+                            </button>
+                        </div>
+
+                        <div class="d-flex flex-column gap-3">
+                            @for (int i = 0; i < GiftProposals.Count; i++)
+                            {
+                                var index = i;
+                                var proposal = GiftProposals[index];
+                                var isUploadingThis = uploadingProposalId == proposal.Id;
+
+                                <div class="gift-proposal-card shadow-sm" @key="proposal.Id">
+                                    <div class="d-flex align-items-center justify-content-between mb-2 pb-2 border-bottom" style="border-color: #fed7aa !important;">
+                                        <span class="badge text-white d-inline-flex align-items-center gap-1 px-2 py-1" style="background-color: var(--bnc-orange);">
+                                            <SvgIcon Name="gift" Size="12" />
+                                            <span>Propuesta #@(index + 1)</span>
+                                        </span>
+
+                                        @if (GiftProposals.Count > 1 || proposal.HasContent)
                                         {
-                                            <button type="button" class="btn btn-sm btn-link text-danger p-0 small w-100 text-decoration-none" @onclick="RemoveGiftImageAsync">
-                                                Quitar imagen
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger py-0 px-2 d-inline-flex align-items-center gap-1 small"
+                                                    @onclick="() => RemoveGiftProposalAsync(proposal)">
+                                                <SvgIcon Name="trash" Size="13" />
+                                                <span>Eliminar</span>
                                             </button>
                                         }
                                     </div>
-                                </div>
 
-                                <div class="mt-2">
-                                    <div class="input-group input-group-sm">
-                                        <span class="input-group-text bg-white text-muted">
-                                            <SvgIcon Name="link" Size="14" />
-                                        </span>
-                                        <InputText class="form-control" @bind-Value="Model.GiftReferenceUrl" placeholder="URL referencial" />
+                                    <div class="row g-3 align-items-center">
+                                        <!-- Imagen del artículo -->
+                                        <div class="col-12 col-sm-5">
+                                            <div class="d-flex align-items-center gap-3 p-2 rounded-3 bg-white border">
+                                                @if (!string.IsNullOrWhiteSpace(proposal.ImagePath))
+                                                {
+                                                    <img src="@proposal.ImagePath"
+                                                         alt="Imagen propuesta @(index + 1)"
+                                                         class="rounded-2 border shadow-sm"
+                                                         style="width: 68px; height: 68px; object-fit: cover; flex-shrink: 0; background: white;" />
+                                                }
+                                                else
+                                                {
+                                                    <div class="rounded-2 border d-flex align-items-center justify-content-center bg-light text-muted"
+                                                         style="width: 68px; height: 68px; flex-shrink: 0;">
+                                                        <SvgIcon Name="image" Size="24" Class="text-warning" />
+                                                    </div>
+                                                }
+
+                                                <div class="flex-grow-1 overflow-hidden">
+                                                    <label class="btn btn-sm btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-1 py-2 mb-1" style="cursor: pointer;">
+                                                        <SvgIcon Name="upload" Size="14" />
+                                                        <span class="text-truncate">@(isUploadingThis ? "Subiendo..." : "Subir Imagen")</span>
+                                                        <InputFile OnChange="@(e => HandleProposalImageUpload(proposal, e))" accept="image/*" class="d-none" />
+                                                    </label>
+                                                    @if (!string.IsNullOrWhiteSpace(proposal.ImagePath))
+                                                    {
+                                                        <button type="button"
+                                                                class="btn btn-sm btn-link text-danger p-0 small w-100 text-decoration-none"
+                                                                @onclick="() => RemoveProposalImageAsync(proposal)">
+                                                            Quitar imagen
+                                                        </button>
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Breve descripción y URL referencial -->
+                                        <div class="col-12 col-sm-7">
+                                            <div class="mb-2">
+                                                <label class="form-label fw-semibold text-secondary small mb-1">Breve descripción del artículo</label>
+                                                <input type="text"
+                                                       class="form-control form-control-sm bg-white"
+                                                       @bind="proposal.Description"
+                                                       @bind:event="oninput" />
+                                            </div>
+                                            <div>
+                                                <label class="form-label fw-semibold text-secondary small mb-1">URL referencial</label>
+                                                <div class="input-group input-group-sm">
+                                                    <span class="input-group-text bg-white text-muted">
+                                                        <SvgIcon Name="link" Size="14" />
+                                                    </span>
+                                                    <input type="text"
+                                                           class="form-control bg-white"
+                                                           @bind="proposal.ReferenceUrl"
+                                                           @bind:event="oninput" />
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            }
                         </div>
-                    </div>
-
-                    <!-- Section: Cosas que le gustan -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-success mb-1 d-flex align-items-center gap-1">
-                            <SvgIcon Name="gift" Size="16" />
-                            <span>Cosas que @(IsAdminMode ? "le gustan" : "me gustan")</span>
-                        </label>
-                        <InputTextArea class="form-control border-success-subtle" 
-                                       rows="3" 
-                                       @bind-Value="Model.Likes" />
-                    </div>
-
-                    <!-- Section: Cosas que NO le gustan -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-danger mb-1 d-flex align-items-center gap-1">
-                            <SvgIcon Name="dislike" Size="16" />
-                            <span>Cosas que NO @(IsAdminMode ? "le gustan" : "me gustan")</span>
-                        </label>
-                        <InputTextArea class="form-control border-danger-subtle" 
-                                       rows="2" 
-                                       @bind-Value="Model.Dislikes" />
-                    </div>
-
-                    <!-- Section: Alergias -->
-                    <div class="mb-3">
-                        <label class="form-label fw-bold text-warning-emphasis mb-1 d-flex align-items-center gap-1">
-                            <SvgIcon Name="alert" Size="16" />
-                            <span>A qué @(IsAdminMode ? "es alérgico" : "soy alérgico")</span>
-                        </label>
-                        <InputTextArea class="form-control border-warning-subtle" 
-                                       rows="2" 
-                                       @bind-Value="Model.Allergies" />
-                    </div>
-
-                    <!-- Sizes & Favorite Color -->
-                    <div class="row g-2 g-sm-3 mb-3 p-2 p-sm-3 bg-light rounded-3 border mx-0">
-                        <div class="col-6 col-sm-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
-                                <SvgIcon Name="shirt" Size="14" Class="text-muted" /> Talla Camisa
-                            </label>
-                            <InputText class="form-control form-control-sm" @bind-Value="Model.ShirtSize" />
-                        </div>
-                        <div class="col-6 col-sm-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
-                                <SvgIcon Name="tag" Size="14" Class="text-muted" /> Calzado
-                            </label>
-                            <InputText class="form-control form-control-sm" @bind-Value="Model.ShoeSize" />
-                        </div>
-                        <div class="col-12 col-sm-4">
-                            <label class="form-label fw-semibold text-secondary small mb-1 d-flex align-items-center gap-1">
-                                <SvgIcon Name="palette" Size="14" Class="text-muted" /> Color Favorito
-                            </label>
-                            <InputText class="form-control form-control-sm" @bind-Value="Model.FavoriteColor" />
-                        </div>
-                    </div>
-
-                    <!-- Section: Notas Adicionales -->
-                    <div class="mb-2">
-                        <label class="form-label fw-semibold text-secondary small mb-1">Notas extras / Mensaje para tu Amigo Secreto</label>
-                        <InputTextArea class="form-control" rows="2" @bind-Value="Model.Notes" />
-                    </div>
+                    }
                 </div>
 
                 <!-- Sticky Modal Footer -->
                 <div class="bnc-modal-footer bg-light px-3 px-sm-4 py-3 border-top d-flex flex-wrap gap-2 justify-content-between align-items-center">
                     <button type="button" class="btn btn-outline-secondary px-3 flex-grow-1 flex-sm-grow-0" @onclick="HandleCancel">Cancelar</button>
-                    <button type="submit" class="btn btn-bnc-orange px-4 d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" disabled="@(isSaving || isUploadingProfile || isUploadingGift)">
+                    <button type="submit" class="btn btn-bnc-orange px-4 d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" disabled="@(isSaving || isUploadingProfile || uploadingProposalId != null)">
                         @if (isSaving)
                         {
                             <span class="spinner-border spinner-border-sm" role="status"></span>
@@ -279,10 +380,15 @@
     [Parameter] public EventCallback OnCancel { get; set; }
 
     private Person Model = new();
+    private List<GiftProposal> GiftProposals = new();
+    private int activeTab = 1;
+    private bool _wasOpen = false;
+    private int? _loadedPersonId = null;
+
     private bool IsNew => PersonToEdit == null || PersonToEdit.Id == 0;
     private bool isSaving = false;
     private bool isUploadingProfile = false;
-    private bool isUploadingGift = false;
+    private string? uploadingProposalId = null;
     private string? ErrorMessage;
 
     private static readonly string[] ColorPalette = new[]
@@ -299,12 +405,15 @@
 
     protected override void OnParametersSet()
     {
-        if (IsOpen)
+        if (IsOpen && (!_wasOpen || _loadedPersonId != PersonToEdit?.Id))
         {
+            _wasOpen = true;
+            _loadedPersonId = PersonToEdit?.Id;
+            activeTab = 1;
             ErrorMessage = null;
+
             if (PersonToEdit != null && PersonToEdit.Id != 0)
             {
-                // Si aún tiene el texto por defecto "Pendiente por definir", mostrar el campo vacío para facilitar la edición
                 var likes = PersonToEdit.HasCustomLikes ? PersonToEdit.Likes : "";
                 var dislikes = PersonToEdit.HasCustomDislikes ? PersonToEdit.Dislikes : "";
 
@@ -329,6 +438,16 @@
                     Notes = PersonToEdit.Notes,
                     CreatedAt = PersonToEdit.CreatedAt
                 };
+
+                GiftProposals = Model.GetGiftProposals()
+                    .Select(p => new GiftProposal
+                    {
+                        Id = p.Id,
+                        Description = p.Description,
+                        ReferenceUrl = p.ReferenceUrl,
+                        ImagePath = p.ImagePath
+                    })
+                    .ToList();
             }
             else
             {
@@ -339,7 +458,18 @@
                     Dislikes = "",
                     Allergies = ""
                 };
+                GiftProposals = new List<GiftProposal>();
             }
+
+            if (GiftProposals.Count == 0)
+            {
+                GiftProposals.Add(new GiftProposal());
+            }
+        }
+        else if (!IsOpen)
+        {
+            _wasOpen = false;
+            _loadedPersonId = null;
         }
     }
 
@@ -358,6 +488,25 @@
             Model.Username = Person.GenerateDefaultUsername(Model.FirstName, Model.LastName);
             Model.Password = Person.GenerateDefaultPassword(Model.LastName);
             Model.Email = Person.GenerateDefaultEmail(Model.FirstName, Model.LastName);
+        }
+    }
+
+    private void AddGiftProposal()
+    {
+        GiftProposals.Add(new GiftProposal());
+    }
+
+    private async Task RemoveGiftProposalAsync(GiftProposal proposal)
+    {
+        if (!string.IsNullOrWhiteSpace(proposal.ImagePath))
+        {
+            await ImageStorage.RemoveGiftProposalImageAsync(Model.FirstName, Model.LastName, proposal.Id);
+        }
+
+        GiftProposals.Remove(proposal);
+        if (GiftProposals.Count == 0)
+        {
+            GiftProposals.Add(new GiftProposal());
         }
     }
 
@@ -390,12 +539,12 @@
         }
     }
 
-    private async Task HandleGiftImageUpload(InputFileChangeEventArgs e)
+    private async Task HandleProposalImageUpload(GiftProposal proposal, InputFileChangeEventArgs e)
     {
         var file = e.File;
         if (file == null) return;
 
-        isUploadingGift = true;
+        uploadingProposalId = proposal.Id;
         ErrorMessage = null;
         try
         {
@@ -403,9 +552,10 @@
             using var ms = new MemoryStream();
             await stream.CopyToAsync(ms);
 
-            Model.GiftImagePath = await ImageStorage.SaveGiftImageAsync(
+            proposal.ImagePath = await ImageStorage.SaveGiftProposalImageAsync(
                 Model.FirstName,
                 Model.LastName,
+                proposal.Id,
                 ms.ToArray(),
                 file.ContentType);
         }
@@ -415,7 +565,7 @@
         }
         finally
         {
-            isUploadingGift = false;
+            uploadingProposalId = null;
         }
     }
 
@@ -425,10 +575,15 @@
         await ImageStorage.RemoveProfilePhotoAsync(Model.FirstName, Model.LastName);
     }
 
-    private async Task RemoveGiftImageAsync()
+    private async Task RemoveProposalImageAsync(GiftProposal proposal)
     {
-        Model.GiftImagePath = null;
-        await ImageStorage.RemoveGiftImageAsync(Model.FirstName, Model.LastName);
+        proposal.ImagePath = null;
+        await ImageStorage.RemoveGiftProposalImageAsync(Model.FirstName, Model.LastName, proposal.Id);
+    }
+
+    private void HandleInvalidSubmit()
+    {
+        activeTab = 1;
     }
 
     private async Task HandleValidSubmit()
@@ -438,6 +593,8 @@
 
         try
         {
+            Model.SetGiftProposals(GiftProposals);
+
             Person saved;
             if (IsNew)
             {

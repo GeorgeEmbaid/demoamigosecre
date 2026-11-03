@@ -228,6 +228,12 @@ public class PersonService : IPersonService
         existing.Notes = person.Notes?.Trim();
         existing.UpdatedAt = DateTime.UtcNow;
 
+        var activeIds = existing.GetGiftProposals()
+            .Where(p => !string.IsNullOrWhiteSpace(p.ImagePath))
+            .Select(p => p.Id)
+            .ToList();
+        await _imageStorage.KeepOnlyActiveProposalImagesAsync(existing.FirstName, existing.LastName, activeIds);
+
         SyncPersonImagesFromMemory(existing);
 
         await context.SaveChangesAsync();
@@ -277,6 +283,49 @@ public class PersonService : IPersonService
         if (!string.IsNullOrWhiteSpace(memGiftUrl))
         {
             p.GiftImagePath = memGiftUrl;
+        }
+
+        var proposals = p.GetGiftProposals();
+        var memProposalUrls = _imageStorage.GetAllProposalImageUrls(p.FirstName, p.LastName);
+        bool changed = false;
+
+        foreach (var prop in proposals)
+        {
+            var memPropUrl = _imageStorage.GetGiftProposalImageUrlIfExists(p.FirstName, p.LastName, prop.Id);
+            if (!string.IsNullOrWhiteSpace(memPropUrl) && prop.ImagePath != memPropUrl)
+            {
+                prop.ImagePath = memPropUrl;
+                changed = true;
+            }
+        }
+
+        // Si en el archivo .txt hay imágenes de propuestas que aún no estaban registradas en la lista, incorporarlas
+        foreach (var kvp in memProposalUrls)
+        {
+            if (!proposals.Any(x => string.Equals(x.Id, kvp.Key, StringComparison.OrdinalIgnoreCase)))
+            {
+                // Si solo había una propuesta "default" vacía o heredada con la misma primera imagen, actualizar su Id
+                var defaultProp = proposals.FirstOrDefault(x => string.Equals(x.Id, "default", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(x.Description) && string.IsNullOrWhiteSpace(x.ReferenceUrl));
+                if (defaultProp != null && proposals.Count == 1)
+                {
+                    defaultProp.Id = kvp.Key;
+                    defaultProp.ImagePath = kvp.Value;
+                }
+                else
+                {
+                    proposals.Add(new GiftProposal
+                    {
+                        Id = kvp.Key,
+                        ImagePath = kvp.Value
+                    });
+                }
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            p.SetGiftProposals(proposals);
         }
     }
 
