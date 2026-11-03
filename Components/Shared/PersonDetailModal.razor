@@ -260,11 +260,19 @@
 
         <!-- Drawer Footer with BNC Orange Button -->
         <div class="p-3 border-top bg-light d-flex flex-wrap gap-2 justify-content-end flex-shrink-0">
-            <button type="button" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" 
-                    style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
-                    @onclick="CopyWishlistAsync">
-                <SvgIcon Name="@(isCopied ? "check" : "copy")" Size="16" />
-                <span>@copyButtonText</span>
+            <button type="button" class="btn btn-bnc-orange d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" 
+                    disabled="@isGeneratingImage"
+                    @onclick="DownloadSummaryImageAsync">
+                @if (isGeneratingImage)
+                {
+                    <span class="spinner-border spinner-border-sm"></span>
+                    <span>Generando imagen...</span>
+                }
+                else
+                {
+                    <SvgIcon Name="@(isCopied ? "check" : "download")" Size="16" />
+                    <span>@copyButtonText</span>
+                }
             </button>
             <button type="button" class="btn btn-secondary px-4 flex-grow-1 flex-sm-grow-0" @onclick="CloseAsync">
                 Cerrar
@@ -277,8 +285,9 @@
     [Parameter] public Person? Person { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
-    private string copyButtonText = "Copiar resumen de ideas";
+    private string copyButtonText = "Descargar resumen en imagen";
     private bool isCopied = false;
+    private bool isGeneratingImage = false;
 
     private async Task CloseAsync()
     {
@@ -297,32 +306,47 @@
         return $"https://{trimmed}";
     }
 
-    private async Task CopyWishlistAsync()
+    private async Task DownloadSummaryImageAsync()
     {
-        if (Person == null) return;
+        if (Person == null || isGeneratingImage) return;
 
-        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName}\n\n" +
-                   $"✅ GUSTOS / IDEAS:\n{string.Join("\n", Person.LikesList.Select(x => $" • {x}"))}\n\n" +
-                   $"❌ EVITAR / NO LE GUSTA:\n{string.Join("\n", Person.DislikesList.Select(x => $" • {x}"))}\n\n" +
-                   $"⚠️ ALERGIAS:\n{(!string.IsNullOrWhiteSpace(Person.Allergies) ? Person.Allergies : "Ninguna")}\n" +
-                   (!string.IsNullOrWhiteSpace(Person.GiftReferenceUrl) ? $"🔗 Link de regalo: {Person.GiftReferenceUrl}\n" : "") +
-                   (!string.IsNullOrWhiteSpace(Person.ShirtSize) ? $"👕 Talla: {Person.ShirtSize}\n" : "") +
-                   (!string.IsNullOrWhiteSpace(Person.FavoriteColor) ? $"🎨 Color fav: {Person.FavoriteColor}\n" : "");
+        isGeneratingImage = true;
+        StateHasChanged();
+
+        var payload = new
+        {
+            fullName = Person.FullName,
+            initials = Person.Initials,
+            avatarColor = Person.AvatarColor ?? "#002855",
+            profilePhotoUrl = !string.IsNullOrWhiteSpace(Person.ProfilePhotoPath) ? $"/{Person.ProfilePhotoPath.TrimStart('/')}" : null,
+            giftImageUrl = !string.IsNullOrWhiteSpace(Person.GiftImagePath) ? $"/{Person.GiftImagePath.TrimStart('/')}" : null,
+            giftReferenceUrl = Person.GiftReferenceUrl,
+            shirtSize = Person.ShirtSize,
+            shoeSize = Person.ShoeSize,
+            favoriteColor = Person.FavoriteColor,
+            likes = Person.HasCustomLikes ? Person.LikesList : new List<string>(),
+            dislikes = Person.HasCustomDislikes ? Person.DislikesList : new List<string>(),
+            allergies = Person.AllergiesList,
+            notes = Person.Notes
+        };
 
         try
         {
-            await JS.InvokeVoidAsync("navigator.clipboard.writeText", text);
+            await JS.InvokeAsync<bool>("bncSummaryGenerator.downloadPersonSummary", payload);
+            isGeneratingImage = false;
             isCopied = true;
-            copyButtonText = "¡Copiado exitosamente!";
+            copyButtonText = "¡Imagen descargada!";
             StateHasChanged();
-            await Task.Delay(2000);
+            await Task.Delay(2500);
             isCopied = false;
-            copyButtonText = "Copiar resumen de ideas";
+            copyButtonText = "Descargar resumen en imagen";
             StateHasChanged();
         }
         catch
         {
-            copyButtonText = "Resumen listo";
+            isGeneratingImage = false;
+            copyButtonText = "Descargar resumen en imagen";
+            StateHasChanged();
         }
     }
 }
