@@ -1,4 +1,5 @@
 @page "/admin"
+@implements IDisposable
 @inject IAdminAuthService AuthService
 @inject IPersonService PersonService
 @rendermode InteractiveServer
@@ -8,7 +9,7 @@
 <div class="container-fluid px-lg-5 py-4">
     @if (!AuthService.IsAuthenticated)
     {
-        <!-- LOGIN SCREEN -->
+        <!-- ADMIN LOGIN SCREEN -->
         <div class="row justify-content-center py-5">
             <div class="col-12 col-md-8 col-lg-5 col-xl-4">
                 <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
@@ -17,7 +18,7 @@
                             <BncLogo Height="46" ShowSubtitle="true" />
                         </div>
                         <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">Portal Administrativo</h4>
-                        <p class="text-muted small mb-0">Gestión de Participantes • Amigo Secreto 2026</p>
+                        <p class="text-muted small mb-0">Soporte y Gestión de Participantes • Amigo Secreto 2026</p>
                     </div>
 
                     <div class="card-body p-4 p-md-5 bg-white">
@@ -55,13 +56,13 @@
 
                             <button type="submit" class="btn btn-bnc-orange w-100 py-2 fs-6 d-flex align-items-center justify-content-center gap-2">
                                 <SvgIcon Name="lock" Size="18" />
-                                <span>Iniciar Sesión BNC</span>
+                                <span>Iniciar Sesión Admin BNC</span>
                             </button>
                         </form>
 
                         <!-- Quick Demo Credentials Helper -->
                         <div class="mt-4 pt-3 border-top text-center">
-                            <small class="text-muted d-block mb-2">Credenciales oficiales de acceso:</small>
+                            <small class="text-muted d-block mb-2">Credenciales oficiales de administrador:</small>
                             <div class="d-inline-flex gap-2 align-items-center bg-light p-2 rounded-3 border small">
                                 <span>Usuario: <strong style="color: var(--bnc-navy);">admin</strong></span>
                                 <span class="text-muted">|</span>
@@ -88,10 +89,10 @@
                     <span class="badge px-3 py-2 rounded-pill text-white" style="background-color: var(--bnc-navy);">
                         BNC Administración
                     </span>
-                    <h2 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Gestión de Participantes</h2>
+                    <h2 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Gestión y Soporte de Participantes</h2>
                 </div>
                 <p class="text-muted small mb-0 mt-1">
-                    Crea participantes, define sus preferencias, gustos, cosas que prefieren evitar y alergias para el Amigo Secreto BNC.
+                    Apoya a los participantes editando sus usuarios/contraseñas de acceso, fotos, enlaces de regalo, gustos y alergias.
                 </p>
             </div>
 
@@ -102,7 +103,7 @@
                 </button>
                 <button type="button" class="btn btn-outline-danger d-flex align-items-center gap-2" @onclick="HandleLogout">
                     <SvgIcon Name="logout" Size="16" />
-                    <span>Cerrar Sesión</span>
+                    <span>Cerrar Sesión Admin</span>
                 </button>
             </div>
         </div>
@@ -116,39 +117,51 @@
             </div>
         }
 
-        <!-- Stats Overview Cards (3 focused metrics) -->
+        <!-- Stats Overview Cards (4 focused metrics) -->
         <div class="row g-2 g-sm-3 mb-4">
-            <div class="col-12 col-md-4">
+            <div class="col-6 col-lg-3">
                 <div class="admin-stat-card p-3">
                     <div class="admin-icon-box" style="background-color: #e0f2fe; color: var(--bnc-navy);">
                         <SvgIcon Name="users" Size="22" />
                     </div>
                     <div>
-                        <div class="text-muted small">Total Registrados</div>
+                        <div class="text-muted small">Participantes</div>
                         <div class="fs-4 fw-bold" style="color: var(--bnc-navy-dark);">@people.Count</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-12 col-md-4">
+            <div class="col-6 col-lg-3">
                 <div class="admin-stat-card p-3">
                     <div class="admin-icon-box" style="background-color: #dcfce7; color: #15803d;">
                         <SvgIcon Name="gift" Size="22" />
                     </div>
                     <div>
-                        <div class="text-muted small">Con Gustos Cargados</div>
+                        <div class="text-muted small">Con Gustos</div>
                         <div class="fs-4 fw-bold text-success">@people.Count(p => p.HasCustomLikes)</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-12 col-md-4">
+            <div class="col-6 col-lg-3">
+                <div class="admin-stat-card p-3">
+                    <div class="admin-icon-box" style="background-color: #f3e8ff; color: #7e22ce;">
+                        <SvgIcon Name="camera" Size="22" />
+                    </div>
+                    <div>
+                        <div class="text-muted small">Con Foto / Regalo</div>
+                        <div class="fs-4 fw-bold" style="color: #7e22ce;">@people.Count(p => p.HasProfilePhoto || p.HasGiftReference)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-6 col-lg-3">
                 <div class="admin-stat-card p-3">
                     <div class="admin-icon-box" style="background-color: #ffedd5; color: var(--bnc-orange);">
                         <SvgIcon Name="alert" Size="22" />
                     </div>
                     <div>
-                        <div class="text-muted small">Con Alergias / Alertas</div>
+                        <div class="text-muted small">Con Alergias</div>
                         <div class="fs-4 fw-bold" style="color: var(--bnc-orange);">@people.Count(p => p.AllergiesList.Any())</div>
                     </div>
                 </div>
@@ -159,14 +172,14 @@
         <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-5">
             <!-- Filter & Search Toolbar -->
             <div class="p-3 bg-light border-bottom d-flex flex-wrap align-items-center justify-content-between gap-3">
-                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 420px;">
+                <div class="d-flex align-items-center gap-2 flex-grow-1" style="max-width: 460px;">
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0">
                             <SvgIcon Name="search" Size="16" Class="text-muted" />
                         </span>
                         <input type="text" 
                                class="form-control border-start-0" 
-                               placeholder="Filtrar participante por nombre o apellido..." 
+                               placeholder="Filtrar por nombre, apellido, usuario o correo @@bncenlinea.net..." 
                                @bind="tableSearch" 
                                @bind:event="oninput" />
                         @if (!string.IsNullOrEmpty(tableSearch))
@@ -195,9 +208,9 @@
                     <thead class="table-light text-secondary small text-uppercase">
                         <tr>
                             <th class="ps-4">Participante BNC</th>
-                            <th>Gustos (Wishlist)</th>
-                            <th>Evitar (Disgustos)</th>
-                            <th>Alergias</th>
+                            <th>Acceso (Usuario / Clave)</th>
+                            <th>Foto y Regalo</th>
+                            <th>Gustos y Evitar</th>
                             <th class="text-end pe-4">Acciones</th>
                         </tr>
                     </thead>
@@ -217,80 +230,89 @@
                                 <tr>
                                     <td class="ps-4">
                                         <div class="d-flex align-items-center gap-3">
-                                            <div class="avatar-circle" style="width: 42px; height: 42px; font-size: 0.95rem; background: linear-gradient(135deg, @(p.AvatarColor ?? "#002855"), var(--bnc-orange));">
-                                                @p.Initials
-                                            </div>
+                                            @if (p.HasProfilePhoto)
+                                            {
+                                                <img src="@p.ProfilePhotoPath" 
+                                                     alt="@p.FullName" 
+                                                     class="rounded-circle shadow-sm flex-shrink-0" 
+                                                     style="width: 44px; height: 44px; object-fit: cover; border: 2px solid var(--bnc-orange);" />
+                                            }
+                                            else
+                                            {
+                                                <div class="avatar-circle" style="width: 44px; height: 44px; font-size: 0.95rem; background: linear-gradient(135deg, @(p.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                                                    @p.Initials
+                                                </div>
+                                            }
                                             <div>
                                                 <div class="fw-bold text-dark">@p.FullName</div>
-                                                <small class="text-muted">@(p.Email ?? "Sin correo registrado")</small>
+                                                <small class="text-muted">@(p.Email ?? "Sin correo")</small>
                                             </div>
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex flex-column gap-1" style="max-width: 280px;">
+                                        <div class="d-flex flex-column gap-1 small">
+                                            <div>
+                                                <span class="text-muted">Usuario:</span>
+                                                <code class="fw-bold px-1 rounded bg-light border" style="color: var(--bnc-navy);">@p.Username</code>
+                                            </div>
+                                            <div>
+                                                <span class="text-muted">Clave:</span>
+                                                <code class="fw-semibold px-1 rounded bg-light border" style="color: var(--bnc-orange);">@p.Password</code>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @if (p.HasProfilePhoto)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                                    <SvgIcon Name="camera" Size="12" /> Foto OK
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-muted border">Sin foto</span>
+                                            }
+
+                                            @if (p.HasGiftReference)
+                                            {
+                                                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+                                                    <SvgIcon Name="gift" Size="12" /> Regalo Ref
+                                                </span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="d-flex flex-column gap-1" style="max-width: 260px;">
                                             @if (p.HasCustomLikes)
                                             {
-                                                @foreach (var like in p.LikesList.Take(2))
-                                                {
-                                                    <div class="badge bg-success-subtle text-success text-truncate text-start p-1 fw-normal border border-success-subtle d-flex align-items-center gap-1">
-                                                        <SvgIcon Name="check" Size="12" />
-                                                        <span class="text-truncate">@like</span>
-                                                    </div>
-                                                }
-                                                @if (p.LikesList.Count > 2)
-                                                {
-                                                    <small class="text-muted">+@(p.LikesList.Count - 2) más...</small>
-                                                }
+                                                <div class="badge bg-success-subtle text-success text-truncate text-start p-1 fw-normal border border-success-subtle d-flex align-items-center gap-1">
+                                                    <SvgIcon Name="check" Size="12" />
+                                                    <span class="text-truncate">@p.LikesList.Count gustos (@p.LikesList.First())</span>
+                                                </div>
                                             }
                                             else
                                             {
-                                                <span class="text-muted small fst-italic">Por cargar</span>
+                                                <span class="text-muted small fst-italic">Gustos por cargar</span>
                                             }
-                                        </div>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column gap-1" style="max-width: 280px;">
+
                                             @if (p.HasCustomDislikes)
                                             {
-                                                @foreach (var dislike in p.DislikesList.Take(2))
-                                                {
-                                                    <div class="badge bg-danger-subtle text-danger text-truncate text-start p-1 fw-normal border border-danger-subtle d-flex align-items-center gap-1">
-                                                        <SvgIcon Name="dislike" Size="12" />
-                                                        <span class="text-truncate">@dislike</span>
-                                                    </div>
-                                                }
-                                                @if (p.DislikesList.Count > 2)
-                                                {
-                                                    <small class="text-muted">+@(p.DislikesList.Count - 2) más...</small>
-                                                }
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted small fst-italic">Sin restricciones</span>
+                                                <div class="badge bg-danger-subtle text-danger text-truncate text-start p-1 fw-normal border border-danger-subtle d-flex align-items-center gap-1">
+                                                    <SvgIcon Name="dislike" Size="12" />
+                                                    <span class="text-truncate">@p.DislikesList.Count restricciones</span>
+                                                </div>
                                             }
                                         </div>
-                                    </td>
-                                    <td>
-                                        @if (p.AllergiesList.Any())
-                                        {
-                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle p-2 d-inline-flex align-items-center gap-1">
-                                                <SvgIcon Name="alert" Size="13" />
-                                                <span>@p.AllergiesList.First()</span>
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="text-muted small">Ninguna</span>
-                                        }
                                     </td>
                                     <td class="text-end pe-4">
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1" 
                                                     style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
                                                     @onclick="() => OpenEditModal(p)" 
-                                                    title="Editar participante">
+                                                    title="Editar datos, usuario, contraseña, fotos y gustos">
                                                 <SvgIcon Name="edit" Size="14" />
-                                                <span>Editar</span>
+                                                <span>Editar / Clave</span>
                                             </button>
                                             <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center" 
                                                     @onclick="() => ConfirmDelete(p)" 
@@ -307,8 +329,9 @@
             </div>
         </div>
 
-        <!-- Edit/Create Modal Component -->
+        <!-- Edit/Create Modal Component (Admin Mode = true) -->
         <PersonEditModal IsOpen="isEditModalOpen" 
+                         IsAdminMode="true"
                          PersonToEdit="personToEdit" 
                          OnSaved="HandlePersonSaved" 
                          OnCancel="CloseEditModal" />
@@ -329,7 +352,7 @@
                         </div>
                         <div class="modal-body px-4 py-3">
                             <p class="mb-2">¿Estás seguro de que deseas eliminar a <strong>@personToDelete.FullName</strong> del Amigo Secreto BNC?</p>
-                            <small class="text-muted">Se borrarán permanentemente sus preferencias de regalo, tallas y alertas registradas.</small>
+                            <small class="text-muted">Se borrarán permanentemente sus preferencias de regalo, fotos y credenciales registradas.</small>
                         </div>
                         <div class="modal-footer border-top bg-light px-4 py-3">
                             <button type="button" class="btn btn-outline-secondary" @onclick="CancelDelete">Cancelar</button>
@@ -362,7 +385,9 @@
     private List<Person> FilteredPeople => string.IsNullOrWhiteSpace(tableSearch)
         ? people
         : people.Where(p => 
-            p.FullName.Contains(tableSearch, StringComparison.OrdinalIgnoreCase)
+            p.FullName.Contains(tableSearch, StringComparison.OrdinalIgnoreCase) ||
+            p.Username.Contains(tableSearch, StringComparison.OrdinalIgnoreCase) ||
+            (p.Email != null && p.Email.Contains(tableSearch, StringComparison.OrdinalIgnoreCase))
         ).ToList();
 
     protected override async Task OnInitializedAsync()
@@ -432,8 +457,12 @@
     private async Task HandlePersonSaved(Person saved)
     {
         CloseEditModal();
+        if (AuthService.CurrentParticipant?.Id == saved.Id)
+        {
+            AuthService.SetParticipant(saved);
+        }
         await LoadDataAsync();
-        ShowToast($"Participante '{saved.FullName}' guardado exitosamente");
+        ShowToast($"Participante '{saved.FullName}' (usuario: {saved.Username}) guardado exitosamente");
     }
 
     private void ConfirmDelete(Person p)
@@ -462,7 +491,7 @@
     {
         await PersonService.ResetSampleDataAsync();
         await LoadDataAsync();
-        ShowToast("Participantes BNC restaurados exitosamente");
+        ShowToast("Participantes BNC y credenciales restaurados exitosamente");
     }
 
     private void ShowToast(string message)

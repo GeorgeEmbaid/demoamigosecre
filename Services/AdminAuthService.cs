@@ -1,3 +1,5 @@
+using AmigoSecreto.Models;
+
 namespace AmigoSecreto.Services;
 
 public class AdminAuthService : IAdminAuthService
@@ -7,6 +9,9 @@ public class AdminAuthService : IAdminAuthService
 
     public bool IsAuthenticated { get; private set; }
     public string? CurrentUser { get; private set; }
+
+    public Person? CurrentParticipant { get; private set; }
+    public bool IsParticipantAuthenticated => CurrentParticipant != null;
 
     public event Action? OnAuthenticationStateChanged;
 
@@ -31,6 +36,18 @@ public class AdminAuthService : IAdminAuthService
     {
         IsAuthenticated = false;
         CurrentUser = null;
+        OnAuthenticationStateChanged?.Invoke();
+    }
+
+    public void SetParticipant(Person? participant)
+    {
+        CurrentParticipant = participant;
+        OnAuthenticationStateChanged?.Invoke();
+    }
+
+    public void LogoutParticipant()
+    {
+        CurrentParticipant = null;
         OnAuthenticationStateChanged?.Invoke();
     }
 }

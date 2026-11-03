@@ -1,192 +1,425 @@
 @page "/"
+@implements IDisposable
 @inject IPersonService PersonService
+@inject IAdminAuthService AuthService
 @rendermode InteractiveServer
 
-<PageTitle>Amigo Secreto BNC 2026 - Portal de Búsqueda</PageTitle>
+<PageTitle>Amigo Secreto BNC 2026 - Portal de Participantes</PageTitle>
 
 <div class="container-fluid px-lg-5 py-4">
-    <!-- Hero Banner with BNC Corporate Identity -->
-    <div class="hero-gradient p-3 p-sm-4 p-md-5 mb-4 mb-md-5 rounded-4 position-relative">
-        <div class="row align-items-center position-relative" style="z-index: 2;">
-            <div class="col-lg-8">
-                <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-white bg-opacity-10 text-white rounded-pill mb-2 mb-sm-3 small fw-semibold border border-white border-opacity-10">
-                    <SvgIcon Name="sparkles" Size="15" Class="text-warning" />
-                    <span>Amigo Secreto • Banco Nacional de Crédito 2026</span>
-                </div>
-                <h1 class="fs-2 fs-md-1 fw-bold text-white mb-2">
-                    Descubre los gustos de tu Amigo Secreto
-                </h1>
-                <p class="text-white-50 mb-0 small" style="max-width: 680px; font-size: 0.95rem;">
-                    Busca a cualquier compañero por su <strong>nombre</strong> o <strong>apellido</strong> para conocer sus preferencias de regalo, lo que prefiere evitar y sus alertas médicas de alergias.
-                </p>
-            </div>
-            <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
-                <div class="d-inline-block p-3 rounded-4 bg-white bg-opacity-10 backdrop-blur border border-white border-opacity-15 text-start shadow-sm">
-                    <div class="d-flex align-items-center gap-3">
-                        <div class="p-3 rounded-3" style="background-color: var(--bnc-orange); color: white;">
-                            <SvgIcon Name="gift" Size="30" />
+    @if (!AuthService.IsParticipantAuthenticated)
+    {
+        <!-- PARTICIPANT LOGIN SCREEN -->
+        <div class="row justify-content-center py-4 py-md-5">
+            <div class="col-12 col-md-9 col-lg-5 col-xl-4">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <!-- Top BNC Header -->
+                    <div class="p-4 text-center bg-white border-bottom position-relative" style="border-top: 5px solid var(--bnc-orange) !important;">
+                        <div class="mb-3">
+                            <BncLogo Height="46" ShowSubtitle="true" />
                         </div>
-                        <div>
-                            <div class="text-white fw-bold fs-5">@people.Count Participantes</div>
-                            <small class="text-white-50">Listos para el intercambio navideño</small>
+                        <span class="badge rounded-pill px-3 py-1 mb-2 text-white" style="background-color: var(--bnc-navy);">
+                            Actividad Corporativa 2026
+                        </span>
+                        <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">Acceso de Participantes</h4>
+                        <p class="text-muted small mb-0">Ingresa con tus credenciales para ver los participantes y registrar tus gustos y foto</p>
+                    </div>
+
+                    <!-- Login Form Body -->
+                    <div class="card-body p-4 p-md-4 bg-white">
+                        @if (!string.IsNullOrEmpty(loginError))
+                        {
+                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                                <SvgIcon Name="alert" Size="18" Class="text-danger flex-shrink-0" />
+                                <div>@loginError</div>
+                            </div>
+                        }
+
+                        <form @onsubmit="HandleParticipantLoginAsync">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Usuario BNC</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0">
+                                        <SvgIcon Name="user" Size="16" Class="text-muted" />
+                                    </span>
+                                    <input type="text" 
+                                           class="form-control border-start-0" 
+                                           @bind="loginUsername" 
+                                           placeholder="Inicial nombre + apellido (ej: gembaid)" 
+                                           required />
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    Formato: inicial de tu nombre + tu apellido (ej: <code>sbarragan</code>, <code>gembaid</code>)
+                                </small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Contraseña</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0">
+                                        <SvgIcon Name="key" Size="16" Class="text-muted" />
+                                    </span>
+                                    <input type="@(showPassword ? "text" : "password")" 
+                                           class="form-control border-start-0 border-end-0" 
+                                           @bind="loginPassword" 
+                                           placeholder="apellido2026 (ej: embaid2026)" 
+                                           required />
+                                    <button class="btn btn-outline-secondary" type="button" @onclick="() => showPassword = !showPassword" title="Mostrar/ocultar contraseña">
+                                        <SvgIcon Name="@(showPassword ? "eye-off" : "eye")" Size="16" />
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    Formato por defecto: tu apellido en minúscula seguido de <code>2026</code>
+                                </small>
+                            </div>
+
+                            <button type="submit" class="btn btn-bnc-orange w-100 py-2 fs-6 d-flex align-items-center justify-content-center gap-2" disabled="@isAuthenticating">
+                                @if (isAuthenticating)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span>Verificando acceso...</span>
+                                }
+                                else
+                                {
+                                    <SvgIcon Name="lock" Size="18" />
+                                    <span>Ingresar al Amigo Secreto</span>
+                                }
+                            </button>
+                        </form>
+
+                        <!-- Info Box -->
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="p-3 rounded-3 bg-light border small">
+                                <div class="fw-bold mb-1 d-flex align-items-center gap-1" style="color: var(--bnc-navy);">
+                                    <SvgIcon Name="sparkles" Size="15" Class="text-warning" />
+                                    <span>¿Cómo ingresar por primera vez?</span>
+                                </div>
+                                <ul class="mb-0 ps-3 text-muted" style="font-size: 0.8rem;">
+                                    <li><strong>Usuario:</strong> Inicial de tu nombre + primer apellido (ej: George Embaid &rarr; <code>gembaid</code>).</li>
+                                    <li><strong>Clave:</strong> Tu apellido + 2026 (ej: <code>embaid2026</code>).</li>
+                                    <li>Si tienes dudas con tu clave, solicita apoyo al organizador en el <a href="admin" class="fw-semibold" style="color: var(--bnc-navy);">Portal Admin</a>.</li>
+                                </ul>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-
-        <!-- Big Search Bar integrated inside hero -->
-        <div class="mt-4 pt-2 position-relative" style="z-index: 2;">
-            <div class="search-container d-flex align-items-center p-2">
-                <div class="ps-3 d-flex align-items-center" style="color: var(--bnc-orange);">
-                    <SvgIcon Name="search" Size="22" />
-                </div>
-                <input type="text" 
-                       class="search-input" 
-                       placeholder="Escribe el nombre o apellido de tu compañero (ej: Carlos, Gomez, Valentina)..." 
-                       @bind="searchTerm" 
-                       @bind:event="oninput" 
-                       @bind:after="OnSearchChangedAsync" />
-                @if (!string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    <button class="btn btn-sm btn-light rounded-circle me-2 p-1 d-flex align-items-center justify-content-center" 
-                            style="width: 28px; height: 28px;"
-                            title="Limpiar búsqueda" 
-                            @onclick="ClearSearchAsync">
-                        <SvgIcon Name="dislike" Size="16" Class="text-muted" />
-                    </button>
-                }
-                <button class="btn btn-bnc-orange px-3 px-sm-4 py-2 me-1 d-flex align-items-center gap-2" @onclick="SearchAsync">
-                    <SvgIcon Name="search" Size="18" />
-                    <span class="d-none d-sm-inline">Buscar</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Header Status Bar -->
-    <div class="d-flex align-items-center justify-content-between mb-4">
-        <div>
-            <h5 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Participantes BNC</h5>
-        </div>
-        <div class="text-muted small">
-            Mostrando <span class="fw-bold text-dark">@filteredPeople.Count</span> de @people.Count colaboradores
-        </div>
-    </div>
-
-    <!-- People Grid -->
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--bnc-orange);"></div>
-            <p class="text-muted mt-3">Buscando participantes...</p>
-        </div>
-    }
-    else if (!filteredPeople.Any())
-    {
-        <div class="text-center py-5 px-3 bg-white rounded-4 border border-dashed my-4 shadow-sm">
-            <div class="d-inline-flex p-4 rounded-circle bg-light mb-3" style="color: var(--bnc-orange);">
-                <SvgIcon Name="search" Size="48" />
-            </div>
-            <h4 class="fw-bold" style="color: var(--bnc-navy);">No se encontraron participantes</h4>
-            <p class="text-muted max-w-md mx-auto">
-                No hay coincidencias para "<strong>@searchTerm</strong>".
-            </p>
-            <button class="btn btn-outline-primary mt-2 d-inline-flex align-items-center gap-2" 
-                    style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
-                    @onclick="ClearSearchAsync">
-                <SvgIcon Name="refresh" Size="16" />
-                <span>Limpiar búsqueda y ver todos</span>
-            </button>
         </div>
     }
     else
     {
-        <div class="row g-4">
-            @foreach (var person in filteredPeople)
-            {
-                <div class="col-12 col-md-6 col-xl-4">
-                    <div class="person-card" @onclick="() => SelectPerson(person)">
-                        <div class="card-top-accent"></div>
-                        <div class="p-4 flex-grow-1 d-flex flex-column">
-                            <!-- Card Header: Avatar & Name -->
-                            <div class="d-flex align-items-center gap-3 mb-3">
-                                <div class="avatar-circle" style="background: linear-gradient(135deg, @(person.AvatarColor ?? "#002855"), #FF6600);">
-                                    @person.Initials
-                                </div>
-                                <div class="overflow-hidden">
-                                    <h5 class="fw-bold mb-0 text-dark text-truncate">@person.FullName</h5>
-                                </div>
-                            </div>
-
-                            <!-- Preview of preferences with clean SVG icons -->
-                            <div class="mb-3 flex-grow-1">
-                                <!-- Tags row -->
-                                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                                    @if (person.HasCustomLikes)
-                                    {
-                                        <span class="tag-badge tag-like">
-                                            <SvgIcon Name="gift" Size="14" Class="text-success" />
-                                            <span>@person.LikesList.Count gustos</span>
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="tag-badge bg-light text-secondary border">
-                                            <SvgIcon Name="edit" Size="13" Class="text-muted" />
-                                            <span>Gustos por cargar</span>
-                                        </span>
-                                    }
-
-                                    @if (person.HasCustomDislikes)
-                                    {
-                                        <span class="tag-badge tag-dislike">
-                                            <SvgIcon Name="dislike" Size="14" Class="text-danger" />
-                                            <span>@person.DislikesList.Count evitar</span>
-                                        </span>
-                                    }
-
-                                    @if (person.AllergiesList.Any())
-                                    {
-                                        <span class="tag-badge tag-allergy" title="@person.Allergies">
-                                            <SvgIcon Name="alert" Size="14" Class="text-warning-emphasis" />
-                                            <span>Alergias</span>
-                                        </span>
-                                    }
-                                </div>
-
-                                <!-- Sample quote or first like -->
-                                @if (person.HasCustomLikes && person.LikesList.Any())
+        <!-- LOGGED-IN PARTICIPANT SELF-SERVICE BAR -->
+        @if (AuthService.CurrentParticipant != null)
+        {
+            var me = AuthService.CurrentParticipant;
+            <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden" style="border-left: 5px solid var(--bnc-orange) !important;">
+                <div class="card-body p-3 p-md-4 bg-white">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-lg-7">
+                            <div class="d-flex align-items-center gap-3">
+                                @if (me.HasProfilePhoto)
                                 {
-                                    <p class="text-muted small mb-0 text-truncate">
-                                        <strong class="text-success">Ideal:</strong> @person.LikesList.First()
-                                    </p>
+                                    <img src="@me.ProfilePhotoPath" 
+                                         alt="@me.FullName" 
+                                         class="rounded-circle shadow-sm flex-shrink-0" 
+                                         style="width: 64px; height: 64px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
                                 }
                                 else
                                 {
-                                    <p class="text-muted small mb-0 text-truncate fst-italic">
-                                        Haz clic para ver detalles del participante
-                                    </p>
+                                    <div class="avatar-circle flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.35rem; background: linear-gradient(135deg, @(me.AvatarColor ?? "#002855"), #FF6600);">
+                                        @me.Initials
+                                    </div>
                                 }
-                            </div>
+                                <div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+                                        <span class="badge text-white" style="background-color: var(--bnc-navy);">Tu Perfil Activo</span>
+                                        <small class="text-muted">@me.Email</small>
+                                    </div>
+                                    <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">¡Hola, @me.FullName!</h4>
+                                    <div class="d-flex flex-wrap align-items-center gap-2 mt-1">
+                                        @if (me.HasProfilePhoto)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                                <SvgIcon Name="check" Size="12" /> Foto subida
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+                                                <SvgIcon Name="camera" Size="12" /> Falta subir tu foto
+                                            </span>
+                                        }
 
-                            <!-- Action button -->
-                            <div class="pt-3 border-top d-flex align-items-center justify-content-between">
-                                <span class="small fw-bold" style="color: var(--bnc-navy);">Ver lista de deseos</span>
-                                <span class="d-inline-flex align-items-center" style="color: var(--bnc-orange);">
-                                    <SvgIcon Name="arrow-right" Size="18" />
-                                </span>
+                                        @if (me.HasCustomLikes)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                                <SvgIcon Name="check" Size="12" /> Gustos listos (@me.LikesList.Count)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle d-inline-flex align-items-center gap-1">
+                                                <SvgIcon Name="gift" Size="12" /> Falta indicar tus gustos
+                                            </span>
+                                        }
+
+                                        @if (me.HasGiftReference)
+                                        {
+                                            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle d-inline-flex align-items-center gap-1">
+                                                <SvgIcon Name="image" Size="12" /> Regalo de referencia cargado
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 col-lg-5 text-lg-end">
+                            <div class="d-flex flex-wrap gap-2 justify-content-lg-end">
+                                <button type="button" class="btn btn-bnc-orange d-inline-flex align-items-center gap-2 shadow-sm" @onclick="OpenMyProfileModal">
+                                    <SvgIcon Name="edit" Size="16" />
+                                    <span>Mi Perfil, Foto y Regalo Deseado</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary d-inline-flex align-items-center gap-1" @onclick="() => SelectPerson(me)" title="Ver cómo me ven los demás">
+                                    <SvgIcon Name="eye" Size="16" />
+                                    <span class="d-none d-sm-inline">Ver mi ficha</span>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger d-inline-flex align-items-center gap-1" @onclick="HandleParticipantLogout" title="Cerrar sesión">
+                                    <SvgIcon Name="logout" Size="16" />
+                                    <span class="d-none d-sm-inline">Salir</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </div>
-            }
+            </div>
+        }
+
+        <!-- Notification Toast -->
+        @if (!string.IsNullOrEmpty(toastMessage))
+        {
+            <div class="toast-floating">
+                <SvgIcon Name="check-circle" Size="20" Class="text-warning" />
+                <span>@toastMessage</span>
+            </div>
+        }
+
+        <!-- Hero Banner with BNC Corporate Identity -->
+        <div class="hero-gradient p-3 p-sm-4 p-md-5 mb-4 mb-md-5 rounded-4 position-relative">
+            <div class="row align-items-center position-relative" style="z-index: 2;">
+                <div class="col-lg-8">
+                    <div class="d-inline-flex align-items-center gap-2 px-3 py-1 bg-white bg-opacity-10 text-white rounded-pill mb-2 mb-sm-3 small fw-semibold border border-white border-opacity-10">
+                        <SvgIcon Name="sparkles" Size="15" Class="text-warning" />
+                        <span>Amigo Secreto • Banco Nacional de Crédito 2026</span>
+                    </div>
+                    <h1 class="fs-2 fs-md-1 fw-bold text-white mb-2">
+                        Descubre los gustos de tu Amigo Secreto
+                    </h1>
+                    <p class="text-white-50 mb-0 small" style="max-width: 680px; font-size: 0.95rem;">
+                        Busca a cualquier compañero por su <strong>nombre</strong> o <strong>apellido</strong> para ver su foto, conocer qué le gusta, qué prefiere evitar, sus alergias y la foto o link del regalo que le gustaría recibir.
+                    </p>
+                </div>
+                <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
+                    <div class="d-inline-block p-3 rounded-4 bg-white bg-opacity-10 backdrop-blur border border-white border-opacity-15 text-start shadow-sm">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="p-3 rounded-3" style="background-color: var(--bnc-orange); color: white;">
+                                <SvgIcon Name="gift" Size="30" />
+                            </div>
+                            <div>
+                                <div class="text-white fw-bold fs-5">@people.Count Participantes</div>
+                                <small class="text-white-50">Listos para el intercambio navideño</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Big Search Bar integrated inside hero -->
+            <div class="mt-4 pt-2 position-relative" style="z-index: 2;">
+                <div class="search-container d-flex align-items-center p-2">
+                    <div class="ps-3 d-flex align-items-center" style="color: var(--bnc-orange);">
+                        <SvgIcon Name="search" Size="22" />
+                    </div>
+                    <input type="text" 
+                           class="search-input" 
+                           placeholder="Escribe el nombre o apellido de tu compañero (ej: Sarahy, George, Jesús)..." 
+                           @bind="searchTerm" 
+                           @bind:event="oninput" 
+                           @bind:after="OnSearchChangedAsync" />
+                    @if (!string.IsNullOrWhiteSpace(searchTerm))
+                    {
+                        <button class="btn btn-sm btn-light rounded-circle me-2 p-1 d-flex align-items-center justify-content-center" 
+                                style="width: 28px; height: 28px;"
+                                title="Limpiar búsqueda" 
+                                @onclick="ClearSearchAsync">
+                            <SvgIcon Name="dislike" Size="16" Class="text-muted" />
+                        </button>
+                    }
+                    <button class="btn btn-bnc-orange px-3 px-sm-4 py-2 me-1 d-flex align-items-center gap-2" @onclick="SearchAsync">
+                        <SvgIcon Name="search" Size="18" />
+                        <span class="d-none d-sm-inline">Buscar</span>
+                    </button>
+                </div>
+            </div>
         </div>
+
+        <!-- Header Status Bar -->
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div>
+                <h5 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Participantes de la Actividad</h5>
+            </div>
+            <div class="text-muted small">
+                Mostrando <span class="fw-bold text-dark">@filteredPeople.Count</span> de @people.Count colaboradores
+            </div>
+        </div>
+
+        <!-- People Grid -->
+        @if (isLoading)
+        {
+            <div class="text-center py-5">
+                <div class="spinner-border" role="status" style="width: 3rem; height: 3rem; color: var(--bnc-orange);"></div>
+                <p class="text-muted mt-3">Cargando participantes...</p>
+            </div>
+        }
+        else if (!filteredPeople.Any())
+        {
+            <div class="text-center py-5 px-3 bg-white rounded-4 border border-dashed my-4 shadow-sm">
+                <div class="d-inline-flex p-4 rounded-circle bg-light mb-3" style="color: var(--bnc-orange);">
+                    <SvgIcon Name="search" Size="48" />
+                </div>
+                <h4 class="fw-bold" style="color: var(--bnc-navy);">No se encontraron participantes</h4>
+                <p class="text-muted max-w-md mx-auto">
+                    No hay coincidencias para "<strong>@searchTerm</strong>".
+                </p>
+                <button class="btn btn-outline-primary mt-2 d-inline-flex align-items-center gap-2" 
+                        style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
+                        @onclick="ClearSearchAsync">
+                    <SvgIcon Name="refresh" Size="16" />
+                    <span>Limpiar búsqueda y ver todos</span>
+                </button>
+            </div>
+        }
+        else
+        {
+            <div class="row g-4">
+                @foreach (var person in filteredPeople)
+                {
+                    var isCurrentUser = AuthService.CurrentParticipant?.Id == person.Id;
+                    <div class="col-12 col-md-6 col-xl-4">
+                        <div class="person-card" @onclick="() => SelectPerson(person)">
+                            <div class="card-top-accent"></div>
+                            <div class="p-4 flex-grow-1 d-flex flex-column">
+                                <!-- Card Header: Avatar/Photo & Name -->
+                                <div class="d-flex align-items-center gap-3 mb-3">
+                                    @if (person.HasProfilePhoto)
+                                    {
+                                        <img src="@person.ProfilePhotoPath" 
+                                             alt="@person.FullName" 
+                                             class="rounded-circle shadow-sm flex-shrink-0" 
+                                             style="width: 54px; height: 54px; object-fit: cover; border: 2px solid var(--bnc-orange);" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-circle" style="background: linear-gradient(135deg, @(person.AvatarColor ?? "#002855"), #FF6600);">
+                                            @person.Initials
+                                        </div>
+                                    }
+                                    <div class="overflow-hidden flex-grow-1">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="fw-bold mb-0 text-dark text-truncate">@person.FullName</h5>
+                                            @if (isCurrentUser)
+                                            {
+                                                <span class="badge rounded-pill text-white" style="background-color: var(--bnc-orange); font-size: 0.7rem;">Tú</span>
+                                            }
+                                        </div>
+                                        <small class="text-muted text-truncate d-block">@person.Email</small>
+                                    </div>
+                                </div>
+
+                                <!-- Preview of preferences with clean SVG icons -->
+                                <div class="mb-3 flex-grow-1">
+                                    <!-- Tags row -->
+                                    <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
+                                        @if (person.HasCustomLikes)
+                                        {
+                                            <span class="tag-badge tag-like">
+                                                <SvgIcon Name="gift" Size="14" Class="text-success" />
+                                                <span>@person.LikesList.Count gustos</span>
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="tag-badge bg-light text-secondary border">
+                                                <SvgIcon Name="edit" Size="13" Class="text-muted" />
+                                                <span>Gustos por cargar</span>
+                                            </span>
+                                        }
+
+                                        @if (person.HasGiftReference)
+                                        {
+                                            <span class="tag-badge" style="background-color: #fff2e8; color: var(--bnc-orange); border: 1px solid var(--bnc-orange-border);">
+                                                <SvgIcon Name="image" Size="13" />
+                                                <span>Regalo sugerido</span>
+                                            </span>
+                                        }
+
+                                        @if (person.HasCustomDislikes)
+                                        {
+                                            <span class="tag-badge tag-dislike">
+                                                <SvgIcon Name="dislike" Size="14" Class="text-danger" />
+                                                <span>@person.DislikesList.Count evitar</span>
+                                            </span>
+                                        }
+
+                                        @if (person.AllergiesList.Any())
+                                        {
+                                            <span class="tag-badge tag-allergy" title="@person.Allergies">
+                                                <SvgIcon Name="alert" Size="14" Class="text-warning-emphasis" />
+                                                <span>Alergias</span>
+                                            </span>
+                                        }
+                                    </div>
+
+                                    <!-- Sample quote or first like -->
+                                    @if (person.HasCustomLikes && person.LikesList.Any())
+                                    {
+                                        <p class="text-muted small mb-0 text-truncate">
+                                            <strong class="text-success">Le gusta:</strong> @person.LikesList.First()
+                                        </p>
+                                    }
+                                    else
+                                    {
+                                        <p class="text-muted small mb-0 text-truncate fst-italic">
+                                            Haz clic para ver la ficha completa del participante
+                                        </p>
+                                    }
+                                </div>
+
+                                <!-- Action button -->
+                                <div class="pt-3 border-top d-flex align-items-center justify-content-between">
+                                    <span class="small fw-bold" style="color: var(--bnc-navy);">Ver gustos, foto y regalo</span>
+                                    <span class="d-inline-flex align-items-center" style="color: var(--bnc-orange);">
+                                        <SvgIcon Name="arrow-right" Size="18" />
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
     }
 </div>
 
 <!-- Interactive Detail Drawer Component -->
 <PersonDetailModal Person="selectedPerson" OnClose="CloseDetailModal" />
+
+<!-- Self-Service Profile & Gift Edit Modal for Logged-In Participant -->
+<PersonEditModal IsOpen="isMyProfileModalOpen"
+                 IsAdminMode="false"
+                 PersonToEdit="AuthService.CurrentParticipant"
+                 OnSaved="HandleMyProfileSavedAsync"
+                 OnCancel="CloseMyProfileModal" />
 
 @code {
     private List<Person> people = new();
@@ -194,18 +427,77 @@
     private string searchTerm = "";
     private bool isLoading = true;
 
+    // Participant Login State
+    private string loginUsername = "";
+    private string loginPassword = "";
+    private string? loginError;
+    private bool showPassword = false;
+    private bool isAuthenticating = false;
+
+    // Modals & Notifications
     private Person? selectedPerson;
+    private bool isMyProfileModalOpen = false;
+    private string? toastMessage;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadDataAsync();
+        AuthService.OnAuthenticationStateChanged += HandleAuthStateChanged;
+        if (AuthService.IsParticipantAuthenticated)
+        {
+            await LoadDataAsync();
+        }
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleParticipantLoginAsync()
+    {
+        loginError = null;
+        isAuthenticating = true;
+        try
+        {
+            var participant = await PersonService.AuthenticateParticipantAsync(loginUsername, loginPassword);
+            if (participant != null)
+            {
+                AuthService.SetParticipant(participant);
+                loginPassword = "";
+                await LoadDataAsync();
+            }
+            else
+            {
+                loginError = "Usuario o contraseña incorrectos. Recuerda usar la inicial de tu nombre + apellido (ej: gembaid) y tu apellido + 2026 (ej: embaid2026).";
+            }
+        }
+        finally
+        {
+            isAuthenticating = false;
+        }
+    }
+
+    private void HandleParticipantLogout()
+    {
+        AuthService.LogoutParticipant();
+        selectedPerson = null;
+        isMyProfileModalOpen = false;
+        loginUsername = "";
+        loginPassword = "";
     }
 
     private async Task LoadDataAsync()
     {
         isLoading = true;
         people = await PersonService.GetAllAsync();
-        filteredPeople = people;
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filteredPeople = people;
+        }
+        else
+        {
+            filteredPeople = await PersonService.SearchPeopleAsync(searchTerm);
+        }
         isLoading = false;
     }
 
@@ -235,5 +527,40 @@
     private void CloseDetailModal()
     {
         selectedPerson = null;
+    }
+
+    private void OpenMyProfileModal()
+    {
+        isMyProfileModalOpen = true;
+    }
+
+    private void CloseMyProfileModal()
+    {
+        isMyProfileModalOpen = false;
+    }
+
+    private async Task HandleMyProfileSavedAsync(Person updatedPerson)
+    {
+        isMyProfileModalOpen = false;
+        AuthService.SetParticipant(updatedPerson);
+        await LoadDataAsync();
+        ShowToast("¡Tu perfil, gustos, foto y regalo deseado se han actualizado!");
+    }
+
+    private void ShowToast(string message)
+    {
+        toastMessage = message;
+        StateHasChanged();
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(3500);
+            toastMessage = null;
+            await InvokeAsync(StateHasChanged);
+        });
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthenticationStateChanged -= HandleAuthStateChanged;
     }
 }

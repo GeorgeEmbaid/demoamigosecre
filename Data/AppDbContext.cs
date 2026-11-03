@@ -20,12 +20,13 @@ public class AppDbContext : DbContext
             entity.HasKey(e => e.Id);
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(60);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(60);
-            entity.Property(e => e.Likes).IsRequired();
-            entity.Property(e => e.Dislikes).IsRequired();
+            entity.Property(e => e.Username).HasMaxLength(60);
+            entity.Property(e => e.Password).HasMaxLength(100);
 
-            // Index for faster search
+            // Indexes for faster search and authentication
             entity.HasIndex(e => e.FirstName);
             entity.HasIndex(e => e.LastName);
+            entity.HasIndex(e => e.Username);
         });
     }
 }

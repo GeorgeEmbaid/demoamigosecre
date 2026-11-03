@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+@implements IDisposable
 @inject IAdminAuthService AuthService
 @inject NavigationManager Navigation
 
@@ -17,9 +18,17 @@
 
             <!-- Nav Links with Clean Polished SVG Icons -->
             <nav class="d-flex align-items-center gap-1 gap-sm-2">
+                @if (AuthService.IsParticipantAuthenticated && AuthService.CurrentParticipant != null)
+                {
+                    <div class="d-none d-lg-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-light border me-1">
+                        <SvgIcon Name="user" Size="14" Class="text-primary" />
+                        <small class="fw-semibold text-dark">@AuthService.CurrentParticipant.FullName</small>
+                    </div>
+                }
+
                 <NavLink href="" class="btn btn-sm btn-light px-2 px-sm-3 py-2 fw-semibold text-secondary d-flex align-items-center gap-1 gap-sm-2 border shadow-sm" Match="NavLinkMatch.All">
-                    <SvgIcon Name="search" Size="15" Class="text-secondary" />
-                    <span class="d-none d-sm-inline">Buscar</span>
+                    <SvgIcon Name="users" Size="15" Class="text-secondary" />
+                    <span class="d-none d-sm-inline">Participantes</span>
                 </NavLink>
 
                 <NavLink href="admin" class="btn btn-sm px-2 px-sm-3 py-2 fw-semibold d-flex align-items-center gap-1 gap-sm-2 shadow-sm" style="border: 1px solid var(--bnc-navy); color: var(--bnc-navy); background: white;">
@@ -50,14 +59,12 @@
                 <span>•</span>
                 <span>Banco Nacional de Crédito, C.A.</span>
                 <span>•</span>
-                <span>Amigo Secreto 2026</span>
+                <span>Amigo Secreto 2026 (@("@bncenlinea.net"))</span>
             </div>
             <div class="d-flex align-items-center gap-3 my-1">
                 <span class="d-inline-flex align-items-center gap-1">
-                    <SvgIcon Name="lock" Size="14" Class="text-muted" /> Clave Admin: <code>bnc2026</code>
+                    <SvgIcon Name="lock" Size="14" Class="text-muted" /> Soporte Admin: <code>admin / bnc2026</code>
                 </span>
-                <span>•</span>
-                <span class="text-muted">Blazor Server & SQLite</span>
             </div>
         </div>
     </footer>
@@ -68,3 +75,20 @@
     <a href="." class="reload">Recargar página</a>
     <span class="dismiss">🗙</span>
 </div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        AuthService.OnAuthenticationStateChanged += HandleAuthStateChanged;
+    }
+
+    private void HandleAuthStateChanged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        AuthService.OnAuthenticationStateChanged -= HandleAuthStateChanged;
+    }
+}

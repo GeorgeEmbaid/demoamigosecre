@@ -9,119 +9,103 @@ Este documento contiene toda la información técnica, arquitectónica y operati
 El **Portal Amigo Secreto BNC 2026** es una aplicación web interactiva desarrollada con **Blazor Server** (.NET 10 / Visual Studio 2026) y **SQLite** diseñada para el intercambio navideño corporativo de los colaboradores del **Banco Nacional de Crédito (BNC)**.
 
 ### Características Principales Implementadas:
-1. **Buscador en Tiempo Real (Página Principal `/`):**
-   - Búsqueda instantánea mientras se escribe (*debounced input*).
-   - Insensible a mayúsculas y minúsculas (*case-insensitive*).
-   - Normalización de acentos y tildes (ej. `gomez` encuentra a `Gómez`).
-   - Contador dinámico de resultados y vista limpia sin filtros innecesarios.
-2. **Panel Deslizante de Preferencias (*Offcanvas Drawer*):**
-   - Al seleccionar cualquier participante se despliega un panel lateral (en escritorio) o vista inferior tipo *Bottom Sheet* (en móvil).
-   - 🎁 **Cosas que le gustan / Ideas de regalo**: Deseos y sugerencias.
-   - 🚫 **Cosas que NO le gustan (Evitar)**: Restricciones para no equivocarse.
-   - ⚠️ **Alergias y Restricciones Médicas**: Alertas destacadas en ámbar.
-   - 👕 **Tallas y Notas**: Talla de ropa, calzado, color favorito y mensaje.
-   - 📋 **Copiar Resumen**: Botón de un solo clic que copia la *wishlist* formateada al portapapeles.
-3. **Portal Administrativo Protegido (`/admin`):**
-   - Autenticación con credenciales:
+1. **Autenticación Individual de Participantes (Página Principal `/`):**
+   - Cada participante debe iniciar sesión para ingresar a ver quiénes participan en la actividad de Amigo Secreto.
+   - **Dominio de Correo Corporativo:** `@bncenlinea.net` (ej. `gembaid@bncenlinea.net`).
+   - **Regla de Usuario por Defecto:** Inicial del primer nombre + primer apellido en minúscula sin acentos (ej. `George Embaid` -> `gembaid`, `Sarahy Barragán` -> `sbarragan`).
+   - **Regla de Contraseña por Defecto:** Primer apellido en minúscula sin acentos seguido de `2026` (ej. `embaid2026`, `barragan2026`).
+2. **Autogestión del Participante ("Mi Perfil, Foto y Regalo Deseado"):**
+   - Al iniciar sesión en `/`, el participante ve su barra personal en la parte superior con acceso directo para configurar su ficha:
+     - 📸 **Subir su Foto de Perfil (`ProfilePhotoPath`)**: Almacenada en `wwwroot/uploads/profiles/` para que su Amigo Secreto lo reconozca fácilmente.
+     - 🎁 **Subir Imagen del Regalo Deseado (`GiftImagePath`) + URL Referencial (`GiftReferenceUrl`)**: Almacenada en `wwwroot/uploads/gifts/` junto con un enlace clicable (Amazon, MercadoLibre, tienda en línea, etc.).
+     - ✅ **Cosas que le gustan (`Likes`)**: Ideas y preferencias de regalo.
+     - 🚫 **Cosas que NO le gustan (`Dislikes`)**: Artículos o gustos que prefiere evitar.
+     - ⚠️ **Alergias (`Allergies`)**, tallas y mensaje para su amigo secreto.
+3. **Directorio y Buscador en Tiempo Real (`/`):**
+   - Muestra los 51 participantes con su foto de perfil, indicadores de gustos, regalo sugerido y alertas de alergias.
+   - Búsqueda instantánea por nombre o apellido (*case-insensitive* e insensible a acentos/tildes).
+   - Al seleccionar cualquier participante se abre el panel lateral deslizante (`PersonDetailModal.razor`) mostrando su foto, regalo deseado con imagen y botón de URL externa, cosas que le gustan, cosas que no le gustan y alergias.
+4. **Portal Administrativo Independiente (`/admin`):**
+   - El usuario administrativo está separado de los participantes para labores de soporte y organización:
      - **Usuario:** `admin`
      - **Contraseña:** `bnc2026`
-   - Dashboard con métricas (total participantes, con gustos, con alergias, áreas).
-   - CRUD completo: Crear, Editar datos/preferencias, Eliminar con confirmación.
-   - Herramienta para restaurar datos muestra si fuera necesario.
-4. **Diseño Visual e Identidad Corporativa BNC:**
-   - Colores oficiales: **Azul Marino BNC (`#002855`, `#001428`)** y **Naranja BNC (`#FF6600`)**.
-   - Logo oficial BNC en [wwwroot/images/BNC_Logo.png](wwwroot/images/BNC_Logo.png) y respaldo en CDN CloudFront.
-   - Iconos limpios vectoriales SVG (sin emojis genéricos) con [Components/Shared/SvgIcon.razor](Components/Shared/SvgIcon.razor).
-   - Experiencia de usuario altamente responsive adaptada a móviles, tablets y monitores grandes.
+   - Permite crear/eliminar participantes y apoyar a cualquier colaborador editando su información, sus fotos, sus gustos y **modificando su usuario de acceso (`Username`) y su contraseña (`Password`)** en caso de que lo solicite.
 
 ---
 
-## 👥 2. Participantes Registrados en la Base de Datos (51 Colaboradores)
-La base de datos SQLite tiene precargados los 51 participantes de la lista oficial:
+## 👥 2. Credenciales de los 51 Participantes BNC (`@bncenlinea.net`)
 
-1. Sarahy Barragán
-2. Wilmary Maduro
-3. Leonardo Chacón
-4. Alix Puello
-5. Keynner Aguilar
-6. Carlos Nuñez
-7. Sorianyely Morin
-8. Pablo Barboza
-9. Jesús Gomes
-10. George Embaid
-11. Kevin Solorzano
-12. Erick Adames
-13. Julián Esteves
-14. Susana Escobar
-15. Jhon Erice
-16. Jesús Noguera
-17. José Sanabria
-18. Katherine Mendible
-19. Darwin García
-20. Gabriel Tagliafico
-21. Kervin Azuaje
-22. Albert Rangel
-23. Rosbel Rodríguez
-24. Miguel Suarez
-25. Edinson Cabello
-26. Jesús Colina
-27. Yldemaro Romero
-28. Junior Romero
-29. Rafael Lozano
-30. Andrés Parra
-31. Yhusleika Molina
-32. Victor Obelmejía
-33. Enrique Sanchez
-34. Jonathan Colucci
-35. Michael Bastidas
-36. Lileska Romero
-37. Jose Manuel Quintal
-38. Jose Luis Reyes
-39. Greadary Garcia
-40. Sheyla Tovar
-41. Abraham Figueroa
-42. Karilyn Carvajal
-43. Nestor Villegas
-44. Gustavo Suarez
-45. Eduardo Lobo
-46. Pablo Romero
-47. Yessika Mata
-48. Alexander Diaz
-49. Zenon Avariano
-50. Tokio Franco
-51. Luis Rendon
+| # | Participante | Correo Corporativo | Usuario | Contraseña |
+|---|---|---|---|---|
+| 1 | Sarahy Barragán | `sbarragan@bncenlinea.net` | `sbarragan` | `barragan2026` |
+| 2 | Wilmary Maduro | `wmaduro@bncenlinea.net` | `wmaduro` | `maduro2026` |
+| 3 | Leonardo Chacón | `lchacon@bncenlinea.net` | `lchacon` | `chacon2026` |
+| 4 | Alix Puello | `apuello@bncenlinea.net` | `apuello` | `puello2026` |
+| 5 | Keynner Aguilar | `kaguilar@bncenlinea.net` | `kaguilar` | `aguilar2026` |
+| 6 | Carlos Nuñez | `cnunez@bncenlinea.net` | `cnunez` | `nunez2026` |
+| 7 | Sorianyely Morin | `smorin@bncenlinea.net` | `smorin` | `morin2026` |
+| 8 | Pablo Barboza | `pbarboza@bncenlinea.net` | `pbarboza` | `barboza2026` |
+| 9 | Jesús Gomes | `jgomes@bncenlinea.net` | `jgomes` | `gomes2026` |
+| 10 | George Embaid | `gembaid@bncenlinea.net` | `gembaid` | `embaid2026` |
+| 11 | Kevin Solorzano | `ksolorzano@bncenlinea.net` | `ksolorzano` | `solorzano2026` |
+| 12 | Erick Adames | `eadames@bncenlinea.net` | `eadames` | `adames2026` |
+| 13 | Julián Esteves | `jesteves@bncenlinea.net` | `jesteves` | `esteves2026` |
+| 14 | Susana Escobar | `sescobar@bncenlinea.net` | `sescobar` | `escobar2026` |
+| 15 | Jhon Erice | `jerice@bncenlinea.net` | `jerice` | `erice2026` |
+| 16 | Jesús Noguera | `jnoguera@bncenlinea.net` | `jnoguera` | `noguera2026` |
+| 17 | José Sanabria | `jsanabria@bncenlinea.net` | `jsanabria` | `sanabria2026` |
+| 18 | Katherine Mendible | `kmendible@bncenlinea.net` | `kmendible` | `mendible2026` |
+| 19 | Darwin García | `dgarcia@bncenlinea.net` | `dgarcia` | `garcia2026` |
+| 20 | Gabriel Tagliafico | `gtagliafico@bncenlinea.net` | `gtagliafico` | `tagliafico2026` |
+| 21 | Kervin Azuaje | `kazuaje@bncenlinea.net` | `kazuaje` | `azuaje2026` |
+| 22 | Albert Rangel | `arangel@bncenlinea.net` | `arangel` | `rangel2026` |
+| 23 | Rosbel Rodríguez | `rrodriguez@bncenlinea.net` | `rrodriguez` | `rodriguez2026` |
+| 24 | Miguel Suarez | `msuarez@bncenlinea.net` | `msuarez` | `suarez2026` |
+| 25 | Edinson Cabello | `ecabello@bncenlinea.net` | `ecabello` | `cabello2026` |
+| 26 | Jesús Colina | `jcolina@bncenlinea.net` | `jcolina` | `colina2026` |
+| 27 | Yldemaro Romero | `yromero@bncenlinea.net` | `yromero` | `romero2026` |
+| 28 | Junior Romero | `jromero@bncenlinea.net` | `jromero` | `romero2026` |
+| 29 | Rafael Lozano | `rlozano@bncenlinea.net` | `rlozano` | `lozano2026` |
+| 30 | Andrés Parra | `aparra@bncenlinea.net` | `aparra` | `parra2026` |
+| 31 | Yhusleika Molina | `ymolina@bncenlinea.net` | `ymolina` | `molina2026` |
+| 32 | Victor Obelmejía | `vobelmejia@bncenlinea.net` | `vobelmejia` | `obelmejia2026` |
+| 33 | Enrique Sanchez | `esanchez@bncenlinea.net` | `esanchez` | `sanchez2026` |
+| 34 | Jonathan Colucci | `jcolucci@bncenlinea.net` | `jcolucci` | `colucci2026` |
+| 35 | Michael Bastidas | `mbastidas@bncenlinea.net` | `mbastidas` | `bastidas2026` |
+| 36 | Lileska Romero | `lromero@bncenlinea.net` | `lromero` | `romero2026` |
+| 37 | Jose Manuel Quintal | `jquintal@bncenlinea.net` | `jquintal` | `quintal2026` |
+| 38 | Jose Luis Reyes | `jreyes@bncenlinea.net` | `jreyes` | `reyes2026` |
+| 39 | Greadary Garcia | `ggarcia@bncenlinea.net` | `ggarcia` | `garcia2026` |
+| 40 | Sheyla Tovar | `stovar@bncenlinea.net` | `stovar` | `tovar2026` |
+| 41 | Abraham Figueroa | `afigueroa@bncenlinea.net` | `afigueroa` | `figueroa2026` |
+| 42 | Karilyn Carvajal | `kcarvajal@bncenlinea.net` | `kcarvajal` | `carvajal2026` |
+| 43 | Nestor Villegas | `nvillegas@bncenlinea.net` | `nvillegas` | `villegas2026` |
+| 44 | Gustavo Suarez | `gsuarez@bncenlinea.net` | `gsuarez` | `suarez2026` |
+| 45 | Eduardo Lobo | `elobo@bncenlinea.net` | `elobo` | `lobo2026` |
+| 46 | Pablo Romero | `promero@bncenlinea.net` | `promero` | `romero2026` |
+| 47 | Yessika Mata | `ymata@bncenlinea.net` | `ymata` | `mata2026` |
+| 48 | Alexander Diaz | `adiaz@bncenlinea.net` | `adiaz` | `diaz2026` |
+| 49 | Zenon Avariano | `zavariano@bncenlinea.net` | `zavariano` | `avariano2026` |
+| 50 | Tokio Franco | `tfranco@bncenlinea.net` | `tfranco` | `franco2026` |
+| 51 | Luis Rendon | `lrendon@bncenlinea.net` | `lrendon` | `rendon2026` |
 
 ---
 
-## 🗄️ 3. Base de Datos SQLite (`amigosecreto.db`)
+## 🗄️ 3. Base de Datos SQLite (`amigosecreto.db`) y Archivos Subidos
 - **Archivo:** `amigosecreto.db` ubicado en la raíz del proyecto.
-- **ORM:** Entity Framework Core SQLite (`Microsoft.EntityFrameworkCore.Sqlite` v10.0.12).
-- **Control de versiones:** Este archivo está explícitamente incluido en el repositorio Git (mediante `!amigosecreto.db` en [.gitignore](.gitignore)), de modo que cualquier modificación o carga de gustos se preserva al clonar en casa.
-- **Concurrencia en Blazor Server:** Se utiliza `IDbContextFactory<AppDbContext>` en [Program.cs](Program.cs) y [Services/PersonService.cs](Services/PersonService.cs) para garantizar que las múltiples operaciones asíncronas de Blazor Server no colisionen sobre un mismo contexto.
+- **Imágenes subidas:** Se guardan en `wwwroot/uploads/profiles/` (fotos de perfil) y `wwwroot/uploads/gifts/` (fotos de regalos deseados).
+- **Control de versiones:** `amigosecreto.db` está incluido en Git (`!amigosecreto.db` en [.gitignore](.gitignore)).
+- **Auto-migración:** `DbInitializer.cs` verifica automáticamente que la tabla `People` contenga las columnas `Username`, `Password`, `ProfilePhotoPath`, `GiftImagePath` y `GiftReferenceUrl`, actualizando el esquema y las credenciales `@bncenlinea.net` si detecta una versión previa.
 
 ---
 
-## 🔑 4. Credenciales del Portal Administrativo
-- **Ruta:** `/admin` (ejemplo: `http://localhost:5222/admin`)
-- **Usuario:** `admin`
-- **Contraseña:** `bnc2026`
-- **Servicio de Validación:** [Services/AdminAuthService.cs](Services/AdminAuthService.cs).
+## 💻 4. Instrucciones para Ejecutar en Casa
 
----
-
-## 💻 5. Instrucciones para Ejecutar en Casa
-
-### Requisitos Previos:
-- .NET SDK 9.0 o 10.0 instalado.
-- Visual Studio 2026 (o Visual Studio 2022 v17.12+) o VS Code con C# Dev Kit.
-
-### Comandos de Ejecución:
 ```bash
-# 1. Clonar el repositorio
-git clone <URL_DEL_REPOSITORIO>
-cd AmigoSecreto
+# 1. Clonar o actualizar el repositorio
+git pull origin develop
 
-# 2. Restaurar dependencias y compilar
+# 2. Compilar la solución
 dotnet build AmigoSecreto.slnx
 
 # 3. Iniciar el servidor local
@@ -129,39 +113,5 @@ dotnet run --launch-profile http
 ```
 
 ### URLs de Acceso Local:
-- **Portal de Búsqueda:** `http://localhost:5222`
-- **Portal Administrativo:** `http://localhost:5222/admin`
-
----
-
-## 📂 6. Estructura de Archivos Clave
-
-| Archivo / Carpeta | Propósito |
-|---|---|
-| `AmigoSecreto.slnx` | Solución oficial en formato moderno de Visual Studio 2026. |
-| `Program.cs` | Configuración de Blazor Server, SQLite, DataProtection y DI. |
-| `amigosecreto.db` | Base de datos SQLite que contiene los participantes y preferencias. |
-| `Models/Person.cs` | Modelo con campos personales, tallas, gustos, alergias y métodos auxiliares. |
-| `Data/AppDbContext.cs` | Contexto de Entity Framework Core. |
-| `Data/DbInitializer.cs` | Semilla inicial de los 51 colaboradores BNC. |
-| `Services/IPersonService.cs` y `PersonService.cs` | Lógica de negocio, CRUD y búsqueda case-insensitive sin acentos. |
-| `Services/IAdminAuthService.cs` y `AdminAuthService.cs` | Autenticación administrativa (`admin` / `bnc2026`). |
-| `Components/Pages/Home.razor` | Vista principal del buscador de participantes. |
-| `Components/Pages/Admin.razor` | Vista del portal administrativo con métricas y CRUD. |
-| `Components/Shared/PersonDetailModal.razor` | Panel deslizante lateral (offcanvas/bottom sheet) de preferencias. |
-| `Components/Shared/PersonEditModal.razor` | Modal para crear/editar participantes y definir preferencias. |
-| `Components/Shared/BncLogo.razor` | Componente con el logo corporativo del BNC y fallback a CDN. |
-| `Components/Shared/SvgIcon.razor` | Biblioteca de iconos vectoriales SVG limpios. |
-| `Components/Layout/MainLayout.razor` | Layout principal con barra superior BNC responsiva y footer. |
-| `wwwroot/app.css` | Hoja de estilos con variables de color BNC y reglas responsive. |
-| `wwwroot/images/BNC_Logo.png` | Archivo del logo oficial del BNC (256x256 px). |
-
----
-
-## 🎯 7. Tareas y Próximos Pasos Recomendados en Casa
-1. **Completar gustos y alergias de los colaboradores:**
-   - Iniciar sesión en `/admin` y abrir cada participante para cargar sus gustos específicos, cosas a evitar y si tiene alergias a algún alimento o fragancia.
-2. **Posibles mejoras adicionales:**
-   - Módulo de Sorteo Automático / Algoritmo de Emparejamiento de Amigo Secreto (evitando parejas mutuas o del mismo equipo si se desea).
-   - Envío de notificaciones por correo o generación de enlace secreto cifrado para cada participante.
-   - Opción para exportar el reporte de participantes y alergias a Excel / PDF.
+- **Portal de Participantes (Login individual):** `http://localhost:5222`
+- **Portal Administrativo (`admin` / `bnc2026`):** `http://localhost:5222/admin`

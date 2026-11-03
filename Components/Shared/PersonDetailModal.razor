@@ -4,16 +4,36 @@
 {
     <div class="modal-backdrop-custom" @onclick="CloseAsync"></div>
     <div class="detail-drawer" tabindex="-1" role="dialog" aria-modal="true">
-        <!-- Drawer Header with BNC Palette -->
+        <!-- Drawer Header with BNC Palette & Profile Photo -->
         <div class="p-4 border-bottom d-flex align-items-center justify-content-between bg-light position-relative">
             <div class="d-flex align-items-center gap-3">
-                <div class="avatar-large" style="background: linear-gradient(135deg, @(Person.AvatarColor ?? "#002855"), var(--bnc-orange));">
-                    @Person.Initials
-                </div>
+                @if (Person.HasProfilePhoto)
+                {
+                    <a href="@Person.ProfilePhotoPath" target="_blank" title="Ver foto completa" class="position-relative d-inline-block">
+                        <img src="@Person.ProfilePhotoPath" 
+                             alt="@Person.FullName" 
+                             class="rounded-circle shadow-sm" 
+                             style="width: 72px; height: 72px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
+                    </a>
+                }
+                else
+                {
+                    <div class="avatar-large" style="background: linear-gradient(135deg, @(Person.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                        @Person.Initials
+                    </div>
+                }
                 <div>
-                    <span class="badge mb-1 text-white" style="background-color: var(--bnc-navy);">
-                        Colaborador BNC
-                    </span>
+                    <div class="d-flex align-items-center gap-2 mb-1">
+                        <span class="badge text-white" style="background-color: var(--bnc-navy);">
+                            Colaborador BNC
+                        </span>
+                        @if (Person.HasProfilePhoto)
+                        {
+                            <span class="badge bg-success-subtle text-success border border-success-subtle d-inline-flex align-items-center gap-1">
+                                <SvgIcon Name="camera" Size="12" /> Foto verificada
+                            </span>
+                        }
+                    </div>
                     <h3 class="h4 mb-0 fw-bold" style="color: var(--bnc-navy-dark);">@Person.FullName</h3>
                     @if (!string.IsNullOrWhiteSpace(Person.Email))
                     {
@@ -69,6 +89,50 @@
                 </div>
             }
 
+            <!-- 0. Regalo Deseado y Referencia Visual (Foto del regalo + URL) -->
+            @if (Person.HasGiftReference)
+            {
+                <div class="p-3 rounded-4 mb-4 shadow-sm position-relative overflow-hidden" style="background: linear-gradient(135deg, #fff7ed 0%, #ffffff 100%); border: 2px solid var(--bnc-orange-border);">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h5 class="fw-bold mb-0 d-flex align-items-center gap-2" style="color: var(--bnc-navy-dark);">
+                            <span class="icon-box-sm text-white rounded-circle" style="background-color: var(--bnc-orange);">
+                                <SvgIcon Name="gift" Size="15" />
+                            </span>
+                            <span>Regalo Deseado / Referencia</span>
+                        </h5>
+                        <span class="badge text-white" style="background-color: var(--bnc-orange);">Sugerencia Directa</span>
+                    </div>
+
+                    @if (!string.IsNullOrWhiteSpace(Person.GiftImagePath))
+                    {
+                        <div class="text-center bg-white p-2 rounded-3 border mb-3 shadow-sm">
+                            <a href="@Person.GiftImagePath" target="_blank" title="Haz clic para ampliar la imagen del regalo">
+                                <img src="@Person.GiftImagePath" 
+                                     alt="Regalo deseado por @Person.FullName" 
+                                     class="img-fluid rounded-2" 
+                                     style="max-height: 220px; object-fit: contain;" />
+                            </a>
+                            <div class="small text-muted mt-1">Haz clic en la imagen para verla en tamaño completo</div>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrWhiteSpace(Person.GiftReferenceUrl))
+                    {
+                        <a href="@GetSafeUrl(Person.GiftReferenceUrl)" 
+                           target="_blank" 
+                           rel="noopener noreferrer" 
+                           class="btn btn-bnc-orange w-100 d-flex align-items-center justify-content-center gap-2 py-2 shadow-sm">
+                            <SvgIcon Name="external-link" Size="16" />
+                            <span>Abrir Enlace de Referencia del Regalo</span>
+                        </a>
+                        <div class="text-truncate small text-muted mt-2 px-1">
+                            <SvgIcon Name="link" Size="12" Class="me-1" />
+                            <span>@Person.GiftReferenceUrl</span>
+                        </div>
+                    }
+                </div>
+            }
+
             <!-- 1. Cosas que le gustan -->
             <div class="preference-block likes-block shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -106,7 +170,7 @@
                 {
                     <div class="p-3 rounded-3 bg-white border text-center text-muted small">
                         <p class="mb-1 fw-semibold text-secondary">🎁 Aún no se han registrado los gustos de este participante.</p>
-                        <small>El administrador puede cargarlos desde el <strong>Portal Administrativo</strong>.</small>
+                        <small>El participante puede cargarlos ingresando a su perfil en el portal.</small>
                     </div>
                 }
             </div>
@@ -148,7 +212,7 @@
                 {
                     <div class="p-3 rounded-3 bg-white border text-center text-muted small">
                         <p class="mb-1 fw-semibold text-secondary">🚫 Sin restricciones registradas aún.</p>
-                        <small>Puedes agregar qué cosas evitar regalarle en el Portal Admin.</small>
+                        <small>Este participante aún no ha indicado qué cosas prefiere evitar.</small>
                     </div>
                 }
             </div>
@@ -228,14 +292,27 @@
         await OnClose.InvokeAsync();
     }
 
+    private static string GetSafeUrl(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return "#";
+        var trimmed = url.Trim();
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            return trimmed;
+        }
+        return $"https://{trimmed}";
+    }
+
     private async Task CopyWishlistAsync()
     {
         if (Person == null) return;
 
-        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName}\n\n" +
+        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName} ({Person.Email})\n\n" +
                    $"✅ GUSTOS / IDEAS:\n{string.Join("\n", Person.LikesList.Select(x => $" • {x}"))}\n\n" +
                    $"❌ EVITAR / NO LE GUSTA:\n{string.Join("\n", Person.DislikesList.Select(x => $" • {x}"))}\n\n" +
                    $"⚠️ ALERGIAS:\n{(!string.IsNullOrWhiteSpace(Person.Allergies) ? Person.Allergies : "Ninguna")}\n" +
+                   (!string.IsNullOrWhiteSpace(Person.GiftReferenceUrl) ? $"🔗 Link de regalo: {Person.GiftReferenceUrl}\n" : "") +
                    (!string.IsNullOrWhiteSpace(Person.ShirtSize) ? $"👕 Talla: {Person.ShirtSize}\n" : "") +
                    (!string.IsNullOrWhiteSpace(Person.FavoriteColor) ? $"🎨 Color fav: {Person.FavoriteColor}\n" : "");
 

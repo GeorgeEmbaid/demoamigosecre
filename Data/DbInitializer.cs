@@ -21,6 +21,19 @@ public static class DbInitializer
     {
         await context.Database.EnsureCreatedAsync();
 
+        // Verificar si el esquema antiguo carece de las nuevas columnas (Username, Password, ProfilePhotoPath, etc.)
+        try
+        {
+            _ = await context.People.Select(p => new { p.Username, p.Password, p.ProfilePhotoPath, p.GiftImagePath, p.GiftReferenceUrl }).FirstOrDefaultAsync();
+        }
+        catch
+        {
+            Console.WriteLine("[AmigoSecreto] Recreating database schema to include authentication & image fields...");
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.EnsureCreatedAsync();
+            forceReload = true;
+        }
+
         if (forceReload)
         {
             context.People.RemoveRange(context.People);
@@ -28,11 +41,36 @@ public static class DbInitializer
         }
         else if (await context.People.AnyAsync())
         {
-            Console.WriteLine("[AmigoSecreto] Database already contains records.");
+            // Asegurarnos de que todos los registros existentes tengan Username, Password y dominio @bncenlinea.net
+            var existingPeople = await context.People.ToListAsync();
+            bool updatedAny = false;
+            foreach (var p in existingPeople)
+            {
+                if (string.IsNullOrWhiteSpace(p.Username))
+                {
+                    p.Username = Person.GenerateDefaultUsername(p.FirstName, p.LastName);
+                    updatedAny = true;
+                }
+                if (string.IsNullOrWhiteSpace(p.Password))
+                {
+                    p.Password = Person.GenerateDefaultPassword(p.LastName);
+                    updatedAny = true;
+                }
+                if (string.IsNullOrWhiteSpace(p.Email) || p.Email.EndsWith("@bnc.com.ve", StringComparison.OrdinalIgnoreCase))
+                {
+                    p.Email = Person.GenerateDefaultEmail(p.FirstName, p.LastName);
+                    updatedAny = true;
+                }
+            }
+            if (updatedAny)
+            {
+                await context.SaveChangesAsync();
+                Console.WriteLine("[AmigoSecreto] Updated existing records with @bncenlinea.net and credentials.");
+            }
             return;
         }
 
-        Console.WriteLine("[AmigoSecreto] Seeding official BNC participants...");
+        Console.WriteLine("[AmigoSecreto] Seeding official BNC participants with @bncenlinea.net and login credentials...");
 
         // Lista oficial de 51 participantes BNC provista por el usuario
         var rawData = new[]
@@ -97,18 +135,21 @@ public static class DbInitializer
 
         foreach (var item in rawData)
         {
-            var emailUser = $"{item.First.ToLowerInvariant().Replace(" ", ".")}.{item.Last.ToLowerInvariant().Replace(" ", ".")}"
-                .Replace("á", "a").Replace("é", "e").Replace("í", "i").Replace("ó", "o").Replace("ú", "u").Replace("ñ", "n");
+            var username = Person.GenerateDefaultUsername(item.First, item.Last);
+            var password = Person.GenerateDefaultPassword(item.Last);
+            var email = Person.GenerateDefaultEmail(item.First, item.Last);
 
             people.Add(new Person
             {
                 FirstName = item.First,
                 LastName = item.Last,
+                Username = username,
+                Password = password,
                 Department = null,
-                Email = $"{emailUser}@bnc.com.ve",
+                Email = email,
                 AvatarColor = AvatarColors[colorIdx % AvatarColors.Length],
-                Likes = "Pendiente por definir en el portal administrativo",
-                Dislikes = "Pendiente por definir en el portal administrativo",
+                Likes = "Pendiente por definir en el portal",
+                Dislikes = "Pendiente por definir en el portal",
                 Allergies = "",
                 Notes = "Participante oficial del Amigo Secreto BNC 2026."
             });
@@ -118,6 +159,6 @@ public static class DbInitializer
 
         await context.People.AddRangeAsync(people);
         await context.SaveChangesAsync();
-        Console.WriteLine($"[AmigoSecreto] Successfully seeded {people.Count} participants!");
+        Console.WriteLine($"[AmigoSecreto] Successfully seeded {people.Count} participants with @bncenlinea.net!");
     }
 }
