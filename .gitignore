@@ -12,5 +12,9 @@ obj/
 ## Data Protection Keys
 App_Data/keys/
 
+## SQLite temporary WAL files
+*.db-shm
+*.db-wal
+
 ## Keep the SQLite database tracked as requested by the user
 !amigosecreto.db

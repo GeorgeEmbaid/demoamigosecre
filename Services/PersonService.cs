@@ -24,15 +24,10 @@ public class PersonService : IPersonService
             .ToListAsync();
     }
 
-    public async Task<List<Person>> SearchPeopleAsync(string? searchTerm, string? department = null)
+    public async Task<List<Person>> SearchPeopleAsync(string? searchTerm)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
         var query = context.People.AsQueryable();
-
-        if (!string.IsNullOrWhiteSpace(department) && department != "Todos")
-        {
-            query = query.Where(p => p.Department == department);
-        }
 
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
@@ -97,11 +92,10 @@ public class PersonService : IPersonService
         existing.FirstName = person.FirstName.Trim();
         existing.LastName = person.LastName.Trim();
         existing.Email = person.Email?.Trim();
-        existing.Department = person.Department?.Trim();
         existing.ShirtSize = person.ShirtSize?.Trim();
         existing.ShoeSize = person.ShoeSize?.Trim();
         existing.FavoriteColor = person.FavoriteColor?.Trim();
-        existing.AvatarColor = person.AvatarColor ?? "#3B82F6";
+        existing.AvatarColor = person.AvatarColor ?? "#002855";
         existing.Likes = person.Likes.Trim();
         existing.Dislikes = person.Dislikes.Trim();
         existing.Allergies = person.Allergies?.Trim() ?? string.Empty;
@@ -121,17 +115,6 @@ public class PersonService : IPersonService
         context.People.Remove(person);
         await context.SaveChangesAsync();
         return true;
-    }
-
-    public async Task<List<string>> GetDepartmentsAsync()
-    {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.People
-            .Where(p => !string.IsNullOrEmpty(p.Department))
-            .Select(p => p.Department!)
-            .Distinct()
-            .OrderBy(d => d)
-            .ToListAsync();
     }
 
     public async Task<int> GetCountAsync()

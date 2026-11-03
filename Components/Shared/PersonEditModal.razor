@@ -44,19 +44,10 @@
                             </div>
                         </div>
 
+                        <!-- Email Row -->
                         <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Departamento / Área BNC</label>
-                                <input type="text" class="form-control" list="deptOptions" @bind="Model.Department" placeholder="Ej: Tecnología e Innovación" />
-                                <datalist id="deptOptions">
-                                    @foreach (var d in Departments)
-                                    {
-                                        <option value="@d" />
-                                    }
-                                </datalist>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-secondary small mb-1">Correo Electrónico</label>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Correo Electrónico (Opcional)</label>
                                 <InputText type="email" class="form-control" @bind-Value="Model.Email" placeholder="usuario@bnc.com.ve" />
                                 <ValidationMessage For="@(() => Model.Email)" class="text-danger small" />
                             </div>
@@ -181,7 +172,6 @@
 @code {
     [Parameter] public bool IsOpen { get; set; }
     [Parameter] public Person? PersonToEdit { get; set; }
-    [Parameter] public List<string> Departments { get; set; } = new();
     [Parameter] public EventCallback<Person> OnSaved { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
@@ -215,7 +205,6 @@
                     FirstName = PersonToEdit.FirstName,
                     LastName = PersonToEdit.LastName,
                     Email = PersonToEdit.Email,
-                    Department = PersonToEdit.Department,
                     ShirtSize = PersonToEdit.ShirtSize,
                     ShoeSize = PersonToEdit.ShoeSize,
                     FavoriteColor = PersonToEdit.FavoriteColor,

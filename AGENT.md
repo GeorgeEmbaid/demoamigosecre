@@ -13,8 +13,7 @@ El **Portal Amigo Secreto BNC 2026** es una aplicación web interactiva desarrol
    - Búsqueda instantánea mientras se escribe (*debounced input*).
    - Insensible a mayúsculas y minúsculas (*case-insensitive*).
    - Normalización de acentos y tildes (ej. `gomez` encuentra a `Gómez`).
-   - Filtro táctil tipo carrusel horizontal para departamentos/áreas BNC.
-   - Contador dinámico de resultados.
+   - Contador dinámico de resultados y vista limpia sin filtros innecesarios.
 2. **Panel Deslizante de Preferencias (*Offcanvas Drawer*):**
    - Al seleccionar cualquier participante se despliega un panel lateral (en escritorio) o vista inferior tipo *Bottom Sheet* (en móvil).
    - 🎁 **Cosas que le gustan / Ideas de regalo**: Deseos y sugerencias.
@@ -38,9 +37,8 @@ El **Portal Amigo Secreto BNC 2026** es una aplicación web interactiva desarrol
 ---
 
 ## 👥 2. Participantes Registrados en la Base de Datos (51 Colaboradores)
-La base de datos SQLite ya tiene precargados los 51 participantes organizados en 3 departamentos:
+La base de datos SQLite tiene precargados los 51 participantes de la lista oficial:
 
-### 🏢 Tecnología e Infraestructura BNC (16)
 1. Sarahy Barragán
 2. Wilmary Maduro
 3. Leonardo Chacón
@@ -57,8 +55,6 @@ La base de datos SQLite ya tiene precargados los 51 participantes organizados en
 14. Susana Escobar
 15. Jhon Erice
 16. Jesús Noguera
-
-### 🏢 Desarrollo y Canales Digitales BNC (16)
 17. José Sanabria
 18. Katherine Mendible
 19. Darwin García
@@ -75,8 +71,6 @@ La base de datos SQLite ya tiene precargados los 51 participantes organizados en
 30. Andrés Parra
 31. Yhusleika Molina
 32. Victor Obelmejía
-
-### 🏢 Operaciones y Sistemas BNC (19)
 33. Enrique Sanchez
 34. Jonathan Colucci
 35. Michael Bastidas

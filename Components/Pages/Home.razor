@@ -64,32 +64,13 @@
         </div>
     </div>
 
-    <!-- Filters Bar -->
-    <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-4">
-        <!-- Department Chips with smooth horizontal touch carousel -->
-        <div class="filter-scroll-wrapper flex-grow-1">
-            <span class="text-muted small fw-semibold me-1 d-none d-sm-inline-flex align-items-center gap-1">
-                <SvgIcon Name="building" Size="15" Class="text-muted" />
-                <span>Área:</span>
-            </span>
-            <button type="button" 
-                    class="filter-chip @(selectedDepartment == "Todos" ? "active" : "")" 
-                    @onclick='() => FilterByDepartmentAsync("Todos")'>
-                Todos (@allPeopleCount)
-            </button>
-            @foreach (var dept in departments)
-            {
-                <button type="button" 
-                        class="filter-chip @(selectedDepartment == dept ? "active" : "")" 
-                        @onclick="() => FilterByDepartmentAsync(dept)">
-                    @dept
-                </button>
-            }
+    <!-- Header Status Bar -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h5 class="fw-bold mb-0" style="color: var(--bnc-navy-dark);">Participantes BNC</h5>
         </div>
-
-        <!-- Result count counter -->
-        <div class="text-muted small text-nowrap">
-            <span class="fw-bold text-dark">@filteredPeople.Count</span> de @people.Count participantes
+        <div class="text-muted small">
+            Mostrando <span class="fw-bold text-dark">@filteredPeople.Count</span> de @people.Count colaboradores
         </div>
     </div>
 
@@ -109,14 +90,13 @@
             </div>
             <h4 class="fw-bold" style="color: var(--bnc-navy);">No se encontraron participantes</h4>
             <p class="text-muted max-w-md mx-auto">
-                No hay coincidencias para "<strong>@searchTerm</strong>" 
-                @(selectedDepartment != "Todos" ? $" en el área de {selectedDepartment}" : "").
+                No hay coincidencias para "<strong>@searchTerm</strong>".
             </p>
             <button class="btn btn-outline-primary mt-2 d-inline-flex align-items-center gap-2" 
                     style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
                     @onclick="ClearSearchAsync">
                 <SvgIcon Name="refresh" Size="16" />
-                <span>Limpiar filtros y ver todos</span>
+                <span>Limpiar búsqueda y ver todos</span>
             </button>
         </div>
     }
@@ -135,10 +115,7 @@
                                     @person.Initials
                                 </div>
                                 <div class="overflow-hidden">
-                                    <h5 class="fw-bold mb-1 text-dark text-truncate">@person.FullName</h5>
-                                    <span class="badge bg-light text-secondary border">
-                                        @(person.Department ?? "BNC")
-                                    </span>
+                                    <h5 class="fw-bold mb-0 text-dark text-truncate">@person.FullName</h5>
                                 </div>
                             </div>
 
@@ -214,10 +191,7 @@
 @code {
     private List<Person> people = new();
     private List<Person> filteredPeople = new();
-    private List<string> departments = new();
     private string searchTerm = "";
-    private string selectedDepartment = "Todos";
-    private int allPeopleCount = 0;
     private bool isLoading = true;
 
     private Person? selectedPerson;
@@ -231,8 +205,6 @@
     {
         isLoading = true;
         people = await PersonService.GetAllAsync();
-        allPeopleCount = people.Count;
-        departments = await PersonService.GetDepartmentsAsync();
         filteredPeople = people;
         isLoading = false;
     }
@@ -245,20 +217,13 @@
     private async Task SearchAsync()
     {
         isLoading = true;
-        filteredPeople = await PersonService.SearchPeopleAsync(searchTerm, selectedDepartment);
+        filteredPeople = await PersonService.SearchPeopleAsync(searchTerm);
         isLoading = false;
-    }
-
-    private async Task FilterByDepartmentAsync(string dept)
-    {
-        selectedDepartment = dept;
-        await SearchAsync();
     }
 
     private async Task ClearSearchAsync()
     {
         searchTerm = "";
-        selectedDepartment = "Todos";
         await SearchAsync();
     }
 

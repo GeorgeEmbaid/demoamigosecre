@@ -12,7 +12,7 @@
                 </div>
                 <div>
                     <span class="badge mb-1 text-white" style="background-color: var(--bnc-navy);">
-                        @(Person.Department ?? "Participante BNC")
+                        Colaborador BNC
                     </span>
                     <h3 class="h4 mb-0 fw-bold" style="color: var(--bnc-navy-dark);">@Person.FullName</h3>
                     @if (!string.IsNullOrWhiteSpace(Person.Email))
@@ -232,7 +232,7 @@
     {
         if (Person == null) return;
 
-        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName} ({Person.Department})\n\n" +
+        var text = $"🎁 AMIGO SECRETO BNC 2026 - {Person.FullName}\n\n" +
                    $"✅ GUSTOS / IDEAS:\n{string.Join("\n", Person.LikesList.Select(x => $" • {x}"))}\n\n" +
                    $"❌ EVITAR / NO LE GUSTA:\n{string.Join("\n", Person.DislikesList.Select(x => $" • {x}"))}\n\n" +
                    $"⚠️ ALERGIAS:\n{(!string.IsNullOrWhiteSpace(Person.Allergies) ? Person.Allergies : "Ninguna")}\n" +

@@ -116,11 +116,11 @@
             </div>
         }
 
-        <!-- Stats Overview Cards -->
+        <!-- Stats Overview Cards (3 focused metrics) -->
         <div class="row g-2 g-sm-3 mb-4">
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card p-2 p-sm-3">
-                    <div class="admin-icon-box d-none d-sm-flex" style="background-color: #e0f2fe; color: var(--bnc-navy);">
+            <div class="col-12 col-md-4">
+                <div class="admin-stat-card p-3">
+                    <div class="admin-icon-box" style="background-color: #e0f2fe; color: var(--bnc-navy);">
                         <SvgIcon Name="users" Size="22" />
                     </div>
                     <div>
@@ -130,38 +130,26 @@
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card p-2 p-sm-3">
-                    <div class="admin-icon-box d-none d-sm-flex" style="background-color: #dcfce7; color: #15803d;">
+            <div class="col-12 col-md-4">
+                <div class="admin-stat-card p-3">
+                    <div class="admin-icon-box" style="background-color: #dcfce7; color: #15803d;">
                         <SvgIcon Name="gift" Size="22" />
                     </div>
                     <div>
-                        <div class="text-muted small">Con Gustos</div>
+                        <div class="text-muted small">Con Gustos Cargados</div>
                         <div class="fs-4 fw-bold text-success">@people.Count(p => p.HasCustomLikes)</div>
                     </div>
                 </div>
             </div>
 
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card p-2 p-sm-3">
-                    <div class="admin-icon-box d-none d-sm-flex" style="background-color: #ffedd5; color: var(--bnc-orange);">
+            <div class="col-12 col-md-4">
+                <div class="admin-stat-card p-3">
+                    <div class="admin-icon-box" style="background-color: #ffedd5; color: var(--bnc-orange);">
                         <SvgIcon Name="alert" Size="22" />
                     </div>
                     <div>
-                        <div class="text-muted small">Con Alergias</div>
+                        <div class="text-muted small">Con Alergias / Alertas</div>
                         <div class="fs-4 fw-bold" style="color: var(--bnc-orange);">@people.Count(p => p.AllergiesList.Any())</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-6 col-md-3">
-                <div class="admin-stat-card p-2 p-sm-3">
-                    <div class="admin-icon-box d-none d-sm-flex" style="background-color: #f1f5f9; color: #475569;">
-                        <SvgIcon Name="building" Size="22" />
-                    </div>
-                    <div>
-                        <div class="text-muted small">Departamentos</div>
-                        <div class="fs-4 fw-bold text-secondary">@departments.Count</div>
                     </div>
                 </div>
             </div>
@@ -191,9 +179,9 @@
                 </div>
 
                 <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @onclick="ResetSampleDataAsync" title="Restaura la lista demo inicial de participantes">
+                    <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @onclick="ResetSampleDataAsync" title="Restaura la lista de los 51 participantes BNC">
                         <SvgIcon Name="refresh" Size="14" />
-                        <span>Restablecer muestra BNC</span>
+                        <span>Restablecer participantes BNC</span>
                     </button>
                     <span class="badge py-2 px-3 rounded-pill text-white" style="background-color: var(--bnc-navy);">
                         @FilteredPeople.Count participantes
@@ -207,7 +195,6 @@
                     <thead class="table-light text-secondary small text-uppercase">
                         <tr>
                             <th class="ps-4">Participante BNC</th>
-                            <th>Departamento</th>
                             <th>Gustos (Wishlist)</th>
                             <th>Evitar (Disgustos)</th>
                             <th>Alergias</th>
@@ -218,7 +205,7 @@
                         @if (!FilteredPeople.Any())
                         {
                             <tr>
-                                <td colspan="6" class="text-center py-5 text-muted">
+                                <td colspan="5" class="text-center py-5 text-muted">
                                     No se encontraron participantes que coincidan con la búsqueda.
                                 </td>
                             </tr>
@@ -240,37 +227,46 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-light text-dark border">
-                                            @(p.Department ?? "BNC")
-                                        </span>
-                                    </td>
-                                    <td>
-                                        <div class="d-flex flex-column gap-1" style="max-width: 250px;">
-                                            @foreach (var like in p.LikesList.Take(2))
+                                        <div class="d-flex flex-column gap-1" style="max-width: 280px;">
+                                            @if (p.HasCustomLikes)
                                             {
-                                                <div class="badge bg-success-subtle text-success text-truncate text-start p-1 fw-normal border border-success-subtle d-flex align-items-center gap-1">
-                                                    <SvgIcon Name="check" Size="12" />
-                                                    <span class="text-truncate">@like</span>
-                                                </div>
+                                                @foreach (var like in p.LikesList.Take(2))
+                                                {
+                                                    <div class="badge bg-success-subtle text-success text-truncate text-start p-1 fw-normal border border-success-subtle d-flex align-items-center gap-1">
+                                                        <SvgIcon Name="check" Size="12" />
+                                                        <span class="text-truncate">@like</span>
+                                                    </div>
+                                                }
+                                                @if (p.LikesList.Count > 2)
+                                                {
+                                                    <small class="text-muted">+@(p.LikesList.Count - 2) más...</small>
+                                                }
                                             }
-                                            @if (p.LikesList.Count > 2)
+                                            else
                                             {
-                                                <small class="text-muted">+@(p.LikesList.Count - 2) más...</small>
+                                                <span class="text-muted small fst-italic">Por cargar</span>
                                             }
                                         </div>
                                     </td>
                                     <td>
-                                        <div class="d-flex flex-column gap-1" style="max-width: 250px;">
-                                            @foreach (var dislike in p.DislikesList.Take(2))
+                                        <div class="d-flex flex-column gap-1" style="max-width: 280px;">
+                                            @if (p.HasCustomDislikes)
                                             {
-                                                <div class="badge bg-danger-subtle text-danger text-truncate text-start p-1 fw-normal border border-danger-subtle d-flex align-items-center gap-1">
-                                                    <SvgIcon Name="dislike" Size="12" />
-                                                    <span class="text-truncate">@dislike</span>
-                                                </div>
+                                                @foreach (var dislike in p.DislikesList.Take(2))
+                                                {
+                                                    <div class="badge bg-danger-subtle text-danger text-truncate text-start p-1 fw-normal border border-danger-subtle d-flex align-items-center gap-1">
+                                                        <SvgIcon Name="dislike" Size="12" />
+                                                        <span class="text-truncate">@dislike</span>
+                                                    </div>
+                                                }
+                                                @if (p.DislikesList.Count > 2)
+                                                {
+                                                    <small class="text-muted">+@(p.DislikesList.Count - 2) más...</small>
+                                                }
                                             }
-                                            @if (p.DislikesList.Count > 2)
+                                            else
                                             {
-                                                <small class="text-muted">+@(p.DislikesList.Count - 2) más...</small>
+                                                <span class="text-muted small fst-italic">Sin restricciones</span>
                                             }
                                         </div>
                                     </td>
@@ -314,7 +310,6 @@
         <!-- Edit/Create Modal Component -->
         <PersonEditModal IsOpen="isEditModalOpen" 
                          PersonToEdit="personToEdit" 
-                         Departments="departments" 
                          OnSaved="HandlePersonSaved" 
                          OnCancel="CloseEditModal" />
 
@@ -357,7 +352,6 @@
     private bool showPassword = false;
 
     private List<Person> people = new();
-    private List<string> departments = new();
     private string tableSearch = "";
 
     private bool isEditModalOpen = false;
@@ -368,8 +362,7 @@
     private List<Person> FilteredPeople => string.IsNullOrWhiteSpace(tableSearch)
         ? people
         : people.Where(p => 
-            p.FullName.Contains(tableSearch, StringComparison.OrdinalIgnoreCase) ||
-            (p.Department != null && p.Department.Contains(tableSearch, StringComparison.OrdinalIgnoreCase))
+            p.FullName.Contains(tableSearch, StringComparison.OrdinalIgnoreCase)
         ).ToList();
 
     protected override async Task OnInitializedAsync()
@@ -416,7 +409,6 @@
     private async Task LoadDataAsync()
     {
         people = await PersonService.GetAllAsync();
-        departments = await PersonService.GetDepartmentsAsync();
     }
 
     private void OpenCreateModal()
@@ -470,7 +462,7 @@
     {
         await PersonService.ResetSampleDataAsync();
         await LoadDataAsync();
-        ShowToast("Datos muestra de BNC restaurados exitosamente");
+        ShowToast("Participantes BNC restaurados exitosamente");
     }
 
     private void ShowToast(string message)
