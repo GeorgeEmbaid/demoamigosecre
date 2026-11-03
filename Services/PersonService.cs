@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using System.Text.Json;
 using AmigoSecreto.Data;
 using AmigoSecreto.Models;
 using Microsoft.EntityFrameworkCore;
@@ -9,40 +10,51 @@ namespace AmigoSecreto.Services;
 public class PersonService : IPersonService
 {
     private readonly IDbContextFactory<AppDbContext> _contextFactory;
+    private readonly IImageStorageService _imageStorage;
+    private readonly string _backupFilePath;
 
-    public PersonService(IDbContextFactory<AppDbContext> contextFactory)
+    public PersonService(
+        IDbContextFactory<AppDbContext> contextFactory,
+        IImageStorageService imageStorage,
+        IWebHostEnvironment env)
     {
         _contextFactory = contextFactory;
+        _imageStorage = imageStorage;
+
+        var storageDir = Path.Combine(env.ContentRootPath, "ImagenesParticipantes");
+        Directory.CreateDirectory(storageDir);
+        _backupFilePath = Path.Combine(storageDir, "respaldo_base_de_datos.json");
     }
 
     public async Task<List<Person>> GetAllAsync()
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.People
+        var list = await context.People
             .OrderBy(p => p.FirstName)
             .ThenBy(p => p.LastName)
             .ToListAsync();
+
+        foreach (var p in list)
+        {
+            SyncPersonImagesFromMemory(p);
+        }
+
+        return list;
     }
 
     public async Task<List<Person>> SearchPeopleAsync(string? searchTerm)
     {
-        await using var context = await _contextFactory.CreateDbContextAsync();
-        var query = context.People.AsQueryable();
+        var list = await GetAllAsync();
 
         if (string.IsNullOrWhiteSpace(searchTerm))
         {
-            return await query
-                .OrderBy(p => p.FirstName)
-                .ThenBy(p => p.LastName)
-                .ToListAsync();
+            return list;
         }
 
         // Normalizamos los términos de búsqueda para garantizar compatibilidad case-insensitive y acentos
         var rawTerm = searchTerm.Trim();
         var normalizedTerm = RemoveDiacritics(rawTerm).ToLowerInvariant();
         var tokens = normalizedTerm.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-
-        var list = await query.ToListAsync();
 
         return list.Where(p =>
         {
@@ -65,7 +77,12 @@ public class PersonService : IPersonService
     public async Task<Person?> GetByIdAsync(int id)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
-        return await context.People.FirstOrDefaultAsync(p => p.Id == id);
+        var person = await context.People.FirstOrDefaultAsync(p => p.Id == id);
+        if (person != null)
+        {
+            SyncPersonImagesFromMemory(person);
+        }
+        return person;
     }
 
     public async Task<Person?> AuthenticateParticipantAsync(string username, string password)
@@ -74,7 +91,6 @@ public class PersonService : IPersonService
             return null;
 
         var rawUser = username.Trim();
-        // Si el usuario ingresa su correo completo (ej. gembaid@bncenlinea.net), extraer la parte del usuario
         if (rawUser.Contains('@'))
         {
             rawUser = rawUser.Split('@')[0].Trim();
@@ -94,13 +110,16 @@ public class PersonService : IPersonService
         if (candidate == null)
             return null;
 
-        // Validar contraseña exacta o normalizada (sin acentos y case-insensitive)
         bool passwordValid =
             string.Equals(candidate.Password, rawPass, StringComparison.Ordinal) ||
             string.Equals(candidate.Password, rawPass, StringComparison.OrdinalIgnoreCase) ||
             Person.NormalizeIdentifier(candidate.Password) == normPass;
 
-        return passwordValid ? candidate : null;
+        if (!passwordValid)
+            return null;
+
+        SyncPersonImagesFromMemory(candidate);
+        return candidate;
     }
 
     public async Task<Person> CreateAsync(Person person)
@@ -137,10 +156,22 @@ public class PersonService : IPersonService
             person.Email = person.Email.Trim();
         }
 
+        if (string.IsNullOrWhiteSpace(person.Likes))
+        {
+            person.Likes = "Pendiente por definir en el portal";
+        }
+        if (string.IsNullOrWhiteSpace(person.Dislikes))
+        {
+            person.Dislikes = "Pendiente por definir en el portal";
+        }
+
+        SyncPersonImagesFromMemory(person);
+
         person.CreatedAt = DateTime.UtcNow;
         person.UpdatedAt = DateTime.UtcNow;
         context.People.Add(person);
         await context.SaveChangesAsync();
+        await FlushAndBackupDatabaseAsync(context);
         return person;
     }
 
@@ -173,13 +204,16 @@ public class PersonService : IPersonService
         existing.ProfilePhotoPath = person.ProfilePhotoPath;
         existing.GiftImagePath = person.GiftImagePath;
         existing.GiftReferenceUrl = person.GiftReferenceUrl?.Trim();
-        existing.Likes = person.Likes?.Trim() ?? string.Empty;
-        existing.Dislikes = person.Dislikes?.Trim() ?? string.Empty;
+        existing.Likes = string.IsNullOrWhiteSpace(person.Likes) ? "Pendiente por definir en el portal" : person.Likes.Trim();
+        existing.Dislikes = string.IsNullOrWhiteSpace(person.Dislikes) ? "Pendiente por definir en el portal" : person.Dislikes.Trim();
         existing.Allergies = person.Allergies?.Trim() ?? string.Empty;
         existing.Notes = person.Notes?.Trim();
         existing.UpdatedAt = DateTime.UtcNow;
 
+        SyncPersonImagesFromMemory(existing);
+
         await context.SaveChangesAsync();
+        await FlushAndBackupDatabaseAsync(context);
         return existing;
     }
 
@@ -189,8 +223,12 @@ public class PersonService : IPersonService
         var person = await context.People.FirstOrDefaultAsync(p => p.Id == id);
         if (person == null) return false;
 
+        await _imageStorage.RemoveProfilePhotoAsync(person.FirstName, person.LastName);
+        await _imageStorage.RemoveGiftImageAsync(person.FirstName, person.LastName);
+
         context.People.Remove(person);
         await context.SaveChangesAsync();
+        await FlushAndBackupDatabaseAsync(context);
         return true;
     }
 
@@ -205,7 +243,48 @@ public class PersonService : IPersonService
         await using var context = await _contextFactory.CreateDbContextAsync();
         context.People.RemoveRange(context.People);
         await context.SaveChangesAsync();
-        await DbInitializer.InitializeAsync(context, forceReload: true);
+        await DbInitializer.InitializeAsync(context, _imageStorage, _backupFilePath, forceReload: true);
+        await FlushAndBackupDatabaseAsync(context);
+    }
+
+    private void SyncPersonImagesFromMemory(Person p)
+    {
+        var memProfileUrl = _imageStorage.GetProfilePhotoUrlIfExists(p.FirstName, p.LastName);
+        if (!string.IsNullOrWhiteSpace(memProfileUrl))
+        {
+            p.ProfilePhotoPath = memProfileUrl;
+        }
+
+        var memGiftUrl = _imageStorage.GetGiftImageUrlIfExists(p.FirstName, p.LastName);
+        if (!string.IsNullOrWhiteSpace(memGiftUrl))
+        {
+            p.GiftImagePath = memGiftUrl;
+        }
+    }
+
+    private async Task FlushAndBackupDatabaseAsync(AppDbContext context)
+    {
+        try
+        {
+            // Forzar volcado inmediato a amigosecreto.db en disco
+            await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);");
+        }
+        catch { }
+
+        try
+        {
+            var allPeople = await context.People.AsNoTracking().OrderBy(p => p.Id).ToListAsync();
+            foreach (var p in allPeople)
+            {
+                SyncPersonImagesFromMemory(p);
+            }
+            var json = JsonSerializer.Serialize(allPeople, new JsonSerializerOptions { WriteIndented = true });
+            await File.WriteAllTextAsync(_backupFilePath, json, Encoding.UTF8);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[AmigoSecreto] Error al guardar respaldo en archivo: {ex.Message}");
+        }
     }
 
     private static string RemoveDiacritics(string text)

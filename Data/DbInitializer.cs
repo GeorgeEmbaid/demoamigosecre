@@ -1,4 +1,7 @@
+using System.Text;
+using System.Text.Json;
 using AmigoSecreto.Models;
+using AmigoSecreto.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace AmigoSecreto.Data;
@@ -17,11 +20,21 @@ public static class DbInitializer
         "#DC2626"  // Crimson
     };
 
-    public static async Task InitializeAsync(AppDbContext context, bool forceReload = false)
+    public static async Task InitializeAsync(
+        AppDbContext context,
+        IImageStorageService? imageStorage = null,
+        string? backupFilePath = null,
+        bool forceReload = false)
     {
         await context.Database.EnsureCreatedAsync();
 
-        // Verificar si el esquema antiguo carece de las nuevas columnas (Username, Password, ProfilePhotoPath, etc.)
+        try
+        {
+            await context.Database.ExecuteSqlRawAsync("PRAGMA synchronous = FULL;");
+        }
+        catch { }
+
+        // Verificar si el esquema antiguo carece de las nuevas columnas
         try
         {
             _ = await context.People.Select(p => new { p.Username, p.Password, p.ProfilePhotoPath, p.GiftImagePath, p.GiftReferenceUrl }).FirstOrDefaultAsync();
@@ -41,7 +54,7 @@ public static class DbInitializer
         }
         else if (await context.People.AnyAsync())
         {
-            // Asegurarnos de que todos los registros existentes tengan Username, Password y dominio @bncenlinea.net
+            // Asegurarnos de que todos los registros existentes tengan Username, Password, @bncenlinea.net e imágenes desde memoria (.txt)
             var existingPeople = await context.People.ToListAsync();
             bool updatedAny = false;
             foreach (var p in existingPeople)
@@ -61,18 +74,63 @@ public static class DbInitializer
                     p.Email = Person.GenerateDefaultEmail(p.FirstName, p.LastName);
                     updatedAny = true;
                 }
+                if (imageStorage != null)
+                {
+                    var memProfile = imageStorage.GetProfilePhotoUrlIfExists(p.FirstName, p.LastName);
+                    if (!string.IsNullOrWhiteSpace(memProfile) && p.ProfilePhotoPath != memProfile)
+                    {
+                        p.ProfilePhotoPath = memProfile;
+                        updatedAny = true;
+                    }
+                    var memGift = imageStorage.GetGiftImageUrlIfExists(p.FirstName, p.LastName);
+                    if (!string.IsNullOrWhiteSpace(memGift) && p.GiftImagePath != memGift)
+                    {
+                        p.GiftImagePath = memGift;
+                        updatedAny = true;
+                    }
+                }
             }
             if (updatedAny)
             {
                 await context.SaveChangesAsync();
-                Console.WriteLine("[AmigoSecreto] Updated existing records with @bncenlinea.net and credentials.");
+                try { await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);"); } catch { }
             }
             return;
         }
 
+        // Si la base de datos SQLite está vacía y existe el archivo de respaldo en disco, restaurar desde el respaldo
+        if (!forceReload && !string.IsNullOrWhiteSpace(backupFilePath) && File.Exists(backupFilePath))
+        {
+            try
+            {
+                var json = await File.ReadAllTextAsync(backupFilePath, Encoding.UTF8);
+                var backupPeople = JsonSerializer.Deserialize<List<Person>>(json);
+                if (backupPeople is { Count: > 0 })
+                {
+                    foreach (var bp in backupPeople)
+                    {
+                        bp.Id = 0; // Permitir inserción limpia
+                        if (imageStorage != null)
+                        {
+                            bp.ProfilePhotoPath = imageStorage.GetProfilePhotoUrlIfExists(bp.FirstName, bp.LastName) ?? bp.ProfilePhotoPath;
+                            bp.GiftImagePath = imageStorage.GetGiftImageUrlIfExists(bp.FirstName, bp.LastName) ?? bp.GiftImagePath;
+                        }
+                    }
+                    await context.People.AddRangeAsync(backupPeople);
+                    await context.SaveChangesAsync();
+                    try { await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);"); } catch { }
+                    Console.WriteLine($"[AmigoSecreto] Restaurados {backupPeople.Count} participantes desde archivo de respaldo.");
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[AmigoSecreto] No se pudo restaurar desde archivo de respaldo: {ex.Message}");
+            }
+        }
+
         Console.WriteLine("[AmigoSecreto] Seeding official BNC participants with @bncenlinea.net and login credentials...");
 
-        // Lista oficial de 51 participantes BNC provista por el usuario
         var rawData = new[]
         {
             new { First = "Sarahy", Last = "Barragán" },
@@ -148,6 +206,8 @@ public static class DbInitializer
                 Department = null,
                 Email = email,
                 AvatarColor = AvatarColors[colorIdx % AvatarColors.Length],
+                ProfilePhotoPath = imageStorage?.GetProfilePhotoUrlIfExists(item.First, item.Last),
+                GiftImagePath = imageStorage?.GetGiftImageUrlIfExists(item.First, item.Last),
                 Likes = "Pendiente por definir en el portal",
                 Dislikes = "Pendiente por definir en el portal",
                 Allergies = "",
@@ -159,6 +219,7 @@ public static class DbInitializer
 
         await context.People.AddRangeAsync(people);
         await context.SaveChangesAsync();
+        try { await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);"); } catch { }
         Console.WriteLine($"[AmigoSecreto] Successfully seeded {people.Count} participants with @bncenlinea.net!");
     }
 }

@@ -93,11 +93,14 @@ El **Portal Amigo Secreto BNC 2026** es una aplicación web interactiva desarrol
 
 ---
 
-## 🗄️ 3. Base de Datos SQLite (`amigosecreto.db`) y Archivos Subidos
-- **Archivo:** `amigosecreto.db` ubicado en la raíz del proyecto.
-- **Imágenes subidas:** Se guardan en `wwwroot/uploads/profiles/` (fotos de perfil) y `wwwroot/uploads/gifts/` (fotos de regalos deseados).
-- **Control de versiones:** `amigosecreto.db` está incluido en Git (`!amigosecreto.db` en [.gitignore](.gitignore)).
-- **Auto-migración:** `DbInitializer.cs` verifica automáticamente que la tabla `People` contenga las columnas `Username`, `Password`, `ProfilePhotoPath`, `GiftImagePath` y `GiftReferenceUrl`, actualizando el esquema y las credenciales `@bncenlinea.net` si detecta una versión previa.
+## 🗄️ 3. Base de Datos SQLite (`amigosecreto.db`) e Imágenes en `.txt` (`ImagenesParticipantes/`)
+- **Archivo SQLite:** `amigosecreto.db` ubicado en la raíz del proyecto con sincronización directa a disco (`PRAGMA wal_checkpoint(TRUNCATE)` y `Pooling=False`).
+- **Imágenes en archivos `.txt` cargados en memoria (`ImageStorageService.cs`):**
+  - Cada vez que un participante o el administrador sube o modifica su foto de perfil o la imagen de su regalo deseado, esta se guarda como texto Base64 en la carpeta `ImagenesParticipantes/` bajo el nombre `{Nombre}_{Apellido}.txt` (ej. `ImagenesParticipantes/Abraham_Figueroa.txt`, `ImagenesParticipantes/George_Embaid.txt`).
+  - Al iniciar el servidor, todos los archivos `.txt` de `ImagenesParticipantes/` se cargan en un diccionario en **memoria** (`ConcurrentDictionary`) y se sirven instantáneamente desde `/imagenes-memoria/{Nombre_Apellido}/perfil` y `/imagenes-memoria/{Nombre_Apellido}/regalo`.
+  - Si el usuario cambia alguna de sus imágenes, el servicio actualiza la memoria y modifica automáticamente su archivo `{Nombre}_{Apellido}.txt` para que nunca se pierda al reiniciar el servidor.
+- **Respaldo de Base de Datos en Archivo (`ImagenesParticipantes/respaldo_base_de_datos.json`):**
+  - En cada guardado o actualización en SQLite, se escribe simultáneamente un archivo de respaldo `ImagenesParticipantes/respaldo_base_de_datos.json` con todos los datos de los participantes, garantizando cero pérdida de datos ante cualquier reinicio.
 
 ---
 
