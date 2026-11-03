@@ -103,6 +103,16 @@ public class Person
     public bool HasProfilePhoto => !string.IsNullOrWhiteSpace(ProfilePhotoPath);
     public bool HasGiftReference => !string.IsNullOrWhiteSpace(GiftImagePath) || !string.IsNullOrWhiteSpace(GiftReferenceUrl);
 
+    /// <summary>
+    /// Indica si el participante aún conserva la contraseña inicial por defecto ({apellido}2026) y debe cambiarla inmediatamente
+    /// </summary>
+    public bool RequiresPasswordChange =>
+        string.IsNullOrWhiteSpace(Password) ||
+        string.Equals(
+            NormalizeIdentifier(Password),
+            NormalizeIdentifier(GenerateDefaultPassword(LastName)),
+            StringComparison.OrdinalIgnoreCase);
+
     public List<string> LikesList => ParseList(Likes);
     public List<string> DislikesList => ParseList(Dislikes);
     public List<string> AllergiesList => ParseList(Allergies);

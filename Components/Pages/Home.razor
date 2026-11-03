@@ -92,6 +92,87 @@
             </div>
         </div>
     }
+    else if (AuthService.IsParticipantAuthenticated && AuthService.CurrentParticipant != null && AuthService.CurrentParticipant.RequiresPasswordChange)
+    {
+        <!-- MANDATORY FIRST-TIME PASSWORD CHANGE SCREEN -->
+        <div class="row justify-content-center py-4 py-md-5">
+            <div class="col-12 col-md-9 col-lg-5 col-xl-4">
+                <div class="card border-0 shadow-lg rounded-4 overflow-hidden">
+                    <div class="p-4 text-center bg-white border-bottom position-relative" style="border-top: 5px solid var(--bnc-orange) !important;">
+                        <div class="mb-3">
+                            <BncLogo Height="44" ShowSubtitle="true" />
+                        </div>
+                        <span class="badge rounded-pill px-3 py-1 mb-2 text-white" style="background-color: var(--bnc-navy);">
+                            Seguridad de Acceso • Primer Ingreso
+                        </span>
+                        <h4 class="fw-bold mb-1" style="color: var(--bnc-navy-dark);">Cambio de Clave Obligatorio</h4>
+                        <p class="text-muted small mb-0">
+                            Hola <strong>@AuthService.CurrentParticipant.FullName</strong>, por seguridad debes personalizar tu contraseña antes de continuar.
+                        </p>
+                    </div>
+
+                    <div class="card-body p-4 bg-white">
+                        @if (!string.IsNullOrEmpty(passwordChangeError))
+                        {
+                            <div class="alert alert-danger py-2 px-3 small rounded-3 mb-3 d-flex align-items-center gap-2">
+                                <SvgIcon Name="alert" Size="18" Class="text-danger flex-shrink-0" />
+                                <div>@passwordChangeError</div>
+                            </div>
+                        }
+
+                        <form @onsubmit="HandleChangeInitialPasswordAsync">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Nueva Contraseña *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0">
+                                        <SvgIcon Name="key" Size="16" Class="text-muted" />
+                                    </span>
+                                    <input type="@(showNewPassword ? "text" : "password")" 
+                                           class="form-control border-start-0 border-end-0" 
+                                           @bind="newPassword" 
+                                           placeholder="Escribe tu nueva contraseña" 
+                                           required />
+                                    <button class="btn btn-outline-secondary" type="button" @onclick="() => showNewPassword = !showNewPassword" title="Mostrar/ocultar contraseña">
+                                        <SvgIcon Name="@(showNewPassword ? "eye-off" : "eye")" Size="16" />
+                                    </button>
+                                </div>
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    Debe ser distinta a tu clave inicial (<code>@Person.GenerateDefaultPassword(AuthService.CurrentParticipant.LastName)</code>)
+                                </small>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold text-secondary small mb-1">Confirmar Nueva Contraseña *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light text-muted border-end-0">
+                                        <SvgIcon Name="lock" Size="16" Class="text-muted" />
+                                    </span>
+                                    <input type="@(showNewPassword ? "text" : "password")" 
+                                           class="form-control border-start-0" 
+                                           @bind="confirmNewPassword" 
+                                           placeholder="Repite tu nueva contraseña" 
+                                           required />
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-bnc-orange w-100 py-2 fs-6 d-flex align-items-center justify-content-center gap-2" disabled="@isChangingPassword">
+                                @if (isChangingPassword)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                    <span>Actualizando clave...</span>
+                                }
+                                else
+                                {
+                                    <SvgIcon Name="check" Size="18" />
+                                    <span>Guardar Nueva Clave y Continuar</span>
+                                }
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
     else
     {
         <!-- LOGGED-IN PARTICIPANT SELF-SERVICE BAR -->
@@ -416,6 +497,13 @@
     private bool showPassword = false;
     private bool isAuthenticating = false;
 
+    // First-Time Password Change State
+    private string newPassword = "";
+    private string confirmNewPassword = "";
+    private string? passwordChangeError;
+    private bool showNewPassword = false;
+    private bool isChangingPassword = false;
+
     // Modals & Notifications
     private Person? selectedPerson;
     private bool isMyProfileModalOpen = false;
@@ -464,15 +552,66 @@
                 AuthService.Logout();
                 AuthService.SetParticipant(participant);
                 loginPassword = "";
+                newPassword = "";
+                confirmNewPassword = "";
+                passwordChangeError = null;
                 await LoadDataAsync();
                 return;
             }
 
-            loginError = "Usuario o contraseña incorrectos. Si eres participante usa inicial + apellido (ej: gembaid) y clave apellido2026 (ej: embaid2026).";
+            loginError = "Usuario o contraseña incorrectos. Si no recuerda la contraseña comuniquese con las EXT 0523 ó 0545";
         }
         finally
         {
             isAuthenticating = false;
+        }
+    }
+
+    private async Task HandleChangeInitialPasswordAsync()
+    {
+        passwordChangeError = null;
+        var me = AuthService.CurrentParticipant;
+        if (me == null) return;
+
+        var cleanNew = newPassword?.Trim() ?? "";
+        var cleanConfirm = confirmNewPassword?.Trim() ?? "";
+
+        if (cleanNew.Length < 4)
+        {
+            passwordChangeError = "La nueva contraseña debe tener al menos 4 caracteres.";
+            return;
+        }
+
+        if (!string.Equals(cleanNew, cleanConfirm, StringComparison.Ordinal))
+        {
+            passwordChangeError = "Las contraseñas no coinciden. Por favor verifícalas.";
+            return;
+        }
+
+        var defaultPass = Person.GenerateDefaultPassword(me.LastName);
+        if (string.Equals(Person.NormalizeIdentifier(cleanNew), Person.NormalizeIdentifier(defaultPass), StringComparison.OrdinalIgnoreCase))
+        {
+            passwordChangeError = $"Por seguridad no puedes conservar la clave inicial ({defaultPass}). Elige una clave diferente.";
+            return;
+        }
+
+        isChangingPassword = true;
+        try
+        {
+            var updated = await PersonService.ChangePasswordAsync(me.Id, cleanNew);
+            AuthService.SetParticipant(updated);
+            newPassword = "";
+            confirmNewPassword = "";
+            await LoadDataAsync();
+            ShowToast("¡Tu contraseña ha sido actualizada exitosamente!");
+        }
+        catch (Exception ex)
+        {
+            passwordChangeError = $"No se pudo actualizar la contraseña: {ex.Message}";
+        }
+        finally
+        {
+            isChangingPassword = false;
         }
     }
 

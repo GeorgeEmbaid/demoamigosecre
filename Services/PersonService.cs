@@ -122,6 +122,24 @@ public class PersonService : IPersonService
         return candidate;
     }
 
+    public async Task<Person> ChangePasswordAsync(int personId, string newPassword)
+    {
+        await using var context = await _contextFactory.CreateDbContextAsync();
+        var existing = await context.People.FirstOrDefaultAsync(p => p.Id == personId);
+        if (existing == null)
+        {
+            throw new InvalidOperationException($"No se encontró el participante con Id {personId}");
+        }
+
+        existing.Password = newPassword.Trim();
+        existing.UpdatedAt = DateTime.UtcNow;
+        SyncPersonImagesFromMemory(existing);
+
+        await context.SaveChangesAsync();
+        await FlushAndBackupDatabaseAsync(context);
+        return existing;
+    }
+
     public async Task<Person> CreateAsync(Person person)
     {
         await using var context = await _contextFactory.CreateDbContextAsync();
