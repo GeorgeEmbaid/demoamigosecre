@@ -312,19 +312,121 @@ body {
     max-width: 560px;
     background: white;
     z-index: 1060;
-    overflow-y: auto;
+    overflow: hidden;
     box-shadow: -10px 0 35px rgba(0, 20, 40, 0.25);
     animation: slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     display: flex;
     flex-direction: column;
 }
 
+.detail-drawer-body {
+    overflow-y: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Mobile-First Responsive Edit Modal (Scrollable Body + Pinned Header/Footer) */
+.bnc-modal-wrapper {
+    position: fixed;
+    inset: 0;
+    z-index: 1060;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    padding: 0;
+    pointer-events: none;
+}
+
+.bnc-modal-dialog {
+    width: 100%;
+    max-width: 800px;
+    max-height: 94dvh;
+    display: flex;
+    flex-direction: column;
+    pointer-events: auto;
+    animation: slideInBottom 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.bnc-modal-content {
+    background: #ffffff;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    display: flex;
+    flex-direction: column;
+    max-height: 94dvh;
+    overflow: hidden;
+    width: 100%;
+}
+
+.bnc-modal-header {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.bnc-modal-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
+}
+
+.bnc-modal-body::-webkit-scrollbar {
+    width: 7px;
+}
+
+.bnc-modal-body::-webkit-scrollbar-track {
+    background: #f8fafc;
+}
+
+.bnc-modal-body::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1;
+    border-radius: 9999px;
+}
+
+.bnc-modal-body::-webkit-scrollbar-thumb:hover {
+    background-color: #94a3b8;
+}
+
+.bnc-modal-footer {
+    flex-shrink: 0;
+}
+
+/* Tablet & Desktop Modal Adjustment (Mobile-First min-width 576px) */
+@media (min-width: 576px) {
+    .bnc-modal-wrapper {
+        align-items: center;
+        padding: 1.25rem;
+    }
+
+    .bnc-modal-dialog {
+        max-height: 90vh;
+        animation: fadeIn 0.2s ease-out;
+    }
+
+    .bnc-modal-content {
+        border-radius: 18px;
+        max-height: 90vh;
+    }
+}
+
 @media (max-width: 576px) {
     .detail-drawer {
-        top: 40px;
+        top: 6dvh;
         border-top-left-radius: 20px;
         border-top-right-radius: 20px;
         animation: slideInBottom 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Evita auto-zoom en navegadores móviles iOS/Android al enfocar campos */
+    .form-control, .form-select, .search-input {
+        font-size: 16px !important;
     }
 }
 

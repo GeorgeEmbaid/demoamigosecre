@@ -199,8 +199,97 @@
                 </div>
             </div>
 
-            <!-- Table with clean design -->
-            <div class="table-responsive">
+            <!-- Mobile-First Cards View (Visible on Phones & Tablets < 992px) -->
+            <div class="d-block d-lg-none p-2 p-sm-3 bg-light">
+                @if (!FilteredPeople.Any())
+                {
+                    <div class="text-center py-4 text-muted bg-white rounded-3 border">
+                        No se encontraron participantes que coincidan con la búsqueda.
+                    </div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var p in FilteredPeople)
+                        {
+                            <div class="bg-white p-3 rounded-3 border shadow-sm">
+                                <div class="d-flex align-items-center justify-content-between gap-2 mb-2">
+                                    <div class="d-flex align-items-center gap-2 overflow-hidden">
+                                        @if (p.HasProfilePhoto)
+                                        {
+                                            <img src="@p.ProfilePhotoPath" 
+                                                 alt="@p.FullName" 
+                                                 class="rounded-circle shadow-sm flex-shrink-0" 
+                                                 style="width: 44px; height: 44px; object-fit: cover; border: 2px solid var(--bnc-orange);" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle flex-shrink-0" style="width: 44px; height: 44px; font-size: 0.95rem; background: linear-gradient(135deg, @(p.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                                                @p.Initials
+                                            </div>
+                                        }
+                                        <div class="overflow-hidden">
+                                            <div class="fw-bold text-dark text-truncate">@p.FullName</div>
+                                            <small class="text-muted text-truncate d-block">@(p.Email ?? "Sin correo")</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Credentials Pill on Mobile -->
+                                <div class="d-flex flex-wrap align-items-center gap-2 p-2 rounded-2 bg-light border mb-2 small">
+                                    <div>
+                                        <span class="text-muted">Usuario:</span>
+                                        <code class="fw-bold" style="color: var(--bnc-navy);">@p.Username</code>
+                                    </div>
+                                    <span class="text-muted">•</span>
+                                    <div>
+                                        <span class="text-muted">Clave:</span>
+                                        <code class="fw-semibold" style="color: var(--bnc-orange);">@p.Password</code>
+                                    </div>
+                                </div>
+
+                                <!-- Status Badges on Mobile -->
+                                <div class="d-flex flex-wrap gap-1 mb-3">
+                                    @if (p.HasProfilePhoto)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">Foto OK</span>
+                                    }
+                                    @if (p.HasGiftReference)
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Regalo Ref</span>
+                                    }
+                                    @if (p.HasCustomLikes)
+                                    {
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle">@p.LikesList.Count gustos</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-light text-muted border">Gustos pendientes</span>
+                                    }
+                                </div>
+
+                                <!-- Touch-Friendly Action Buttons -->
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary flex-grow-1 py-2 d-flex align-items-center justify-content-center gap-1 fw-semibold" 
+                                            style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
+                                            @onclick="() => OpenEditModal(p)">
+                                        <SvgIcon Name="edit" Size="15" />
+                                        <span>Editar / Clave</span>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger px-3 py-2 d-flex align-items-center justify-content-center" 
+                                            @onclick="() => ConfirmDelete(p)" 
+                                            title="Eliminar participante">
+                                        <SvgIcon Name="trash" Size="15" />
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Desktop Table View (Visible on >= 992px) -->
+            <div class="table-responsive d-none d-lg-block">
                 <table class="table table-hover align-middle mb-0">
                     <thead class="table-light text-secondary small text-uppercase">
                         <tr>

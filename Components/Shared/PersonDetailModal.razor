@@ -5,7 +5,7 @@
     <div class="modal-backdrop-custom" @onclick="CloseAsync"></div>
     <div class="detail-drawer" tabindex="-1" role="dialog" aria-modal="true">
         <!-- Drawer Header with BNC Palette & Profile Photo -->
-        <div class="p-4 border-bottom d-flex align-items-center justify-content-between bg-light position-relative">
+        <div class="p-3 p-sm-4 border-bottom d-flex align-items-center justify-content-between bg-light position-relative flex-shrink-0">
             <div class="d-flex align-items-center gap-3">
                 @if (Person.HasProfilePhoto)
                 {
@@ -48,7 +48,7 @@
         </div>
 
         <!-- Drawer Content -->
-        <div class="p-4 flex-grow-1">
+        <div class="p-3 p-sm-4 flex-grow-1 detail-drawer-body">
             <!-- Quick Info Bar (Sizes, Color) with clean SVGs -->
             @if (!string.IsNullOrWhiteSpace(Person.ShirtSize) || !string.IsNullOrWhiteSpace(Person.ShoeSize) || !string.IsNullOrWhiteSpace(Person.FavoriteColor))
             {
@@ -266,7 +266,7 @@
         </div>
 
         <!-- Drawer Footer with BNC Orange Button -->
-        <div class="p-3 border-top bg-light d-flex flex-wrap gap-2 justify-content-end">
+        <div class="p-3 border-top bg-light d-flex flex-wrap gap-2 justify-content-end flex-shrink-0">
             <button type="button" class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2 flex-grow-1 flex-sm-grow-0" 
                     style="border-color: var(--bnc-navy); color: var(--bnc-navy);"
                     @onclick="CopyWishlistAsync">
