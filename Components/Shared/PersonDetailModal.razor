@@ -7,24 +7,27 @@
         <!-- Drawer Header with BNC Palette & Profile Photo -->
         <div class="p-3 p-sm-4 border-bottom d-flex align-items-center justify-content-between bg-light position-relative flex-shrink-0">
             <div class="d-flex align-items-center gap-3">
-                @if (Person.HasProfilePhoto)
-                {
-                    <button type="button"
-                            class="btn p-0 border-0 bg-transparent position-relative d-inline-block bnc-image-preview-trigger rounded-circle"
-                            title="Ver foto completa"
-                            @onclick="OpenProfilePhotoModal">
-                        <img src="@Person.ProfilePhotoPath" 
-                             alt="@Person.FullName" 
-                             class="rounded-circle shadow-sm" 
-                             style="width: 72px; height: 72px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
-                    </button>
-                }
-                else
-                {
-                    <div class="avatar-large" style="background: linear-gradient(135deg, @(Person.AvatarColor ?? "#002855"), var(--bnc-orange));">
-                        @Person.Initials
-                    </div>
-                }
+                <div class="avatar-wrapper avatar-wrapper-lg position-relative flex-shrink-0">
+                    @if (Person.HasProfilePhoto)
+                    {
+                        <button type="button"
+                                class="btn p-0 border-0 bg-transparent position-relative d-inline-block bnc-image-preview-trigger rounded-circle"
+                                title="Ver foto completa"
+                                @onclick="OpenProfilePhotoModal">
+                            <img src="@Person.ProfilePhotoPath" 
+                                 alt="@Person.FullName" 
+                                 class="rounded-circle shadow-sm" 
+                                 style="width: 72px; height: 72px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
+                        </button>
+                    }
+                    else
+                    {
+                        <div class="avatar-large" style="background: linear-gradient(135deg, @(Person.AvatarColor ?? "#002855"), var(--bnc-orange));">
+                            @Person.Initials
+                        </div>
+                    }
+                    <SantaHat />
+                </div>
                 <div>
                     <div class="d-flex align-items-center gap-2 mb-1">
                         <span class="badge text-white" style="background-color: var(--bnc-navy);">

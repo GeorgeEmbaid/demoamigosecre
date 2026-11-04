@@ -1,0 +1,1016 @@
+@inject IJSRuntime JS
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop-custom" @onclick="CloseAsync"></div>
+
+    <div class="bnc-modal-wrapper" tabindex="-1" role="dialog" aria-modal="true">
+        <div class="bnc-modal-dialog office-map-modal-dialog">
+            <div class="bnc-modal-content office-map-modal-content">
+                <!-- Modal Header (Fixed height, no scroll, mobile-first responsive) -->
+                <div class="bnc-modal-header p-2.5 p-sm-3 px-md-4 border-bottom d-flex align-items-center justify-content-between flex-shrink-0" style="border-top: 4px solid var(--bnc-orange) !important;">
+                    <div class="d-flex align-items-center gap-2 gap-sm-2.5 overflow-hidden me-2">
+                        <div class="p-1.5 p-sm-2 rounded-3 text-white d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" style="background: linear-gradient(135deg, #FF6600 0%, #e65100 100%); width: 38px; height: 38px;">
+                            <SvgIcon Name="map" Size="20" />
+                        </div>
+                        <div class="overflow-hidden">
+                            <div class="d-flex align-items-center gap-1.5 mb-0.5">
+                                <h6 class="fw-bold mb-0 text-dark text-truncate" style="font-size: 0.95rem;">Mapa de Puestos</h6>
+                                <span class="badge text-white px-2 py-0.5 rounded-pill small flex-shrink-0" style="background-color: var(--bnc-navy); font-size: 0.70rem;">
+                                    @People.Count
+                                </span>
+                            </div>
+                            <small class="text-muted d-none d-md-inline" style="font-size: 0.75rem;">
+                                Ubica y conoce los escritorios de tus compañeros en <strong>Piso 1</strong> y <strong>Planta Baja (PB)</strong>
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center gap-1.5 gap-sm-2 flex-shrink-0">
+                        <!-- View Mode Switcher (Compact on mobile) -->
+                        <div class="btn-group btn-group-sm p-0.5 p-sm-1 rounded-pill bg-light border shadow-xs" role="group">
+                            <button type="button" 
+                                    class="btn rounded-pill px-2.5 px-sm-3 py-1 fw-semibold @(viewMode == "interactive" ? "btn-dark text-white shadow-sm" : "btn-light text-muted border-0")" 
+                                    style="@(viewMode == "interactive" ? "background-color: var(--bnc-navy) !important;" : "")"
+                                    @onclick='() => viewMode = "interactive"'>
+                                <SvgIcon Name="layers" Size="13" Class="me-1" />
+                                <span>Plano<span class="d-none d-sm-inline"> Interactivo</span></span>
+                            </button>
+                            <button type="button" 
+                                    class="btn rounded-pill px-2.5 px-sm-3 py-1 fw-semibold @(viewMode == "original" ? "btn-dark text-white shadow-sm" : "btn-light text-muted border-0")" 
+                                    style="@(viewMode == "original" ? "background-color: var(--bnc-navy) !important;" : "")"
+                                    @onclick='() => viewMode = "original"'>
+                                <SvgIcon Name="image" Size="13" Class="me-1" />
+                                <span>Diagrama<span class="d-none d-sm-inline"> Original</span></span>
+                            </button>
+                        </div>
+
+                        <button type="button" class="btn-close ms-1 ms-sm-2" aria-label="Cerrar" @onclick="CloseAsync"></button>
+                    </div>
+                </div>
+
+                <!-- Modal Body (Locked viewport, ONLY the map inside scrolls) -->
+                <div class="office-map-modal-body">
+                    <!-- Controls Toolbar: Search, Filters & Zoom -->
+                    <div class="row g-2 align-items-center mb-2 flex-shrink-0">
+                        <!-- Search Collaborator -->
+                        <div class="col-12 col-md-6 col-lg-5">
+                            <div class="input-group shadow-xs">
+                                <span class="input-group-text bg-white border-end-0 text-muted">
+                                    <SvgIcon Name="search" Size="15" />
+                                </span>
+                                <input type="text" 
+                                       class="form-control border-start-0" 
+                                       placeholder="Buscar compañero para iluminar..." 
+                                       @bind="searchName" 
+                                       @bind:event="oninput" />
+                                @if (!string.IsNullOrWhiteSpace(searchName))
+                                {
+                                    <button class="btn btn-outline-secondary border-start-0" type="button" @onclick="ClearSearch" title="Limpiar búsqueda">
+                                        <SvgIcon Name="dislike" Size="14" />
+                                    </button>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Zoom Controls -->
+                        <div class="col-12 col-md-6 col-lg-7">
+                            <div class="d-flex align-items-center justify-content-between justify-content-md-end gap-2 flex-wrap">
+                                <!-- Zoom Buttons -->
+                                <div class="btn-group shadow-xs" role="group">
+                                    <button type="button" class="btn btn-sm btn-light border px-2.5 py-1" @onclick="ZoomOut" title="Reducir zoom">
+                                        <strong>−</strong>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border px-2 py-1 fw-semibold" style="min-width: 52px; font-size: 0.78rem;" @onclick="ResetZoom" title="Restablecer zoom al 85%">
+                                        @($"{zoomLevel}%")
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-light border px-2.5 py-1" @onclick="ZoomIn" title="Aumentar zoom">
+                                        <strong>+</strong>
+                                    </button>
+                                </div>
+
+                                @if (viewMode == "original")
+                                {
+                                    <a href="images/mapa_oficina.png" target="_blank" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-xs px-2.5 py-1" title="Ver imagen en pestaña nueva">
+                                        <SvgIcon Name="external-link" Size="13" />
+                                        <span>Abrir Original</span>
+                                    </a>
+                                }
+                                else
+                                {
+                                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 shadow-xs px-2.5 py-1" @onclick="ResetFilters" title="Restablecer vista y filtros">
+                                        <SvgIcon Name="refresh" Size="13" />
+                                        <span>Restablecer</span>
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Zone Filter Pills (Interactive Mode) -->
+                    @if (viewMode == "interactive")
+                    {
+                        <div class="d-flex align-items-center gap-1.5 mb-2 overflow-x-auto pb-1 flex-shrink-0" style="scrollbar-width: thin; -webkit-overflow-scrolling: touch; white-space: nowrap;">
+                            <span class="small fw-bold text-muted text-uppercase d-none d-md-inline" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                                Zonas:
+                            </span>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "all" ? "active" : "")" @onclick='() => SetZone("all")'>
+                                🌟 Todos (51)
+                            </button>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "pb" ? "active" : "")" @onclick='() => SetZone("pb")'>
+                                🏢 PB (1)
+                            </button>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "oeste" ? "active" : "")" @onclick='() => SetZone("oeste")'>
+                                💻 ATM/POS & Oeste (6)
+                            </button>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "meson" ? "active" : "")" @onclick='() => SetZone("meson")'>
+                                ⚡ Mesón Norte (10)
+                            </button>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "filasur" ? "active" : "")" @onclick='() => SetZone("filasur")'>
+                                👥 Filas Sur (30)
+                            </button>
+                            <button type="button" class="zone-filter-pill @(selectedZone == "barrasur" ? "active" : "")" @onclick='() => SetZone("barrasur")'>
+                                🪑 Barra Sur (4)
+                            </button>
+                        </div>
+                    }
+
+                    <!-- Quick Search Matches Pills (if user searched) -->
+                    @if (!string.IsNullOrWhiteSpace(searchName) && MatchedParticipants.Any())
+                    {
+                        <div class="alert alert-info py-2 px-3 mb-2 rounded-3 small d-flex flex-column gap-1 shadow-xs border border-info-subtle flex-shrink-0">
+                            <div class="fw-bold d-flex align-items-center justify-content-between text-primary">
+                                <span class="d-inline-flex align-items-center gap-1.5">
+                                    <SvgIcon Name="target" Size="15" />
+                                    <span>Puestos Encontrados (@MatchedParticipants.Count):</span>
+                                </span>
+                                <small class="text-muted fw-normal">Haz clic en cualquier compañero para inspeccionar</small>
+                            </div>
+                            <div class="d-flex flex-wrap gap-2 mt-1">
+                                @foreach (var match in MatchedParticipants.Take(6))
+                                {
+                                    var loc = GetLocationFor(match);
+                                    <button type="button" 
+                                            class="badge bg-white text-dark border shadow-xs px-2.5 py-1.5 d-inline-flex align-items-center gap-1.5 btn-link text-decoration-none"
+                                            @onclick="() => SelectPersonFromSearch(match)">
+                                        <span class="rounded-circle text-white p-0.5 d-inline-flex align-items-center justify-content-center" style="width: 18px; height: 18px; font-size: 0.65rem; background-color: var(--bnc-orange);">
+                                            📍
+                                        </span>
+                                        <strong>@match.FullName:</strong>
+                                        <span class="text-primary fw-semibold">@loc</span>
+                                    </button>
+                                }
+                                @if (MatchedParticipants.Count > 6)
+                                {
+                                    <span class="badge bg-secondary text-white px-2 py-1 align-self-center">
+                                        +@(MatchedParticipants.Count - 6) más...
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Collaborator Inspector Card (Floating above blueprint when a desk is active) -->
+                    @if (selectedCollaborator != null)
+                    {
+                        <div class="blueprint-inspector-card mb-2 position-relative flex-shrink-0">
+                            <button type="button" class="btn-close position-absolute top-0 end-0 m-3" aria-label="Cerrar inspector" @onclick="ClearSelection"></button>
+                            
+                            <div class="row align-items-center g-3">
+                                <div class="col-auto">
+                                    <div class="avatar-wrapper avatar-wrapper-lg position-relative">
+                                        <div class="avatar-circle shadow-sm" style="width: 52px; height: 52px; font-size: 1.15rem; @(string.IsNullOrEmpty(selectedCollaborator.ProfilePhotoPath) ? $"background: linear-gradient(135deg, {selectedCollaborator.AvatarColor ?? "#002855"}, #FF6600);" : "")">
+                                            @if (!string.IsNullOrEmpty(selectedCollaborator.ProfilePhotoPath))
+                                            {
+                                                <img src="@selectedCollaborator.ProfilePhotoPath" alt="@selectedCollaborator.FullName" class="w-100 h-100 rounded-circle object-fit-cover" />
+                                            }
+                                            else
+                                            {
+                                                <span>@selectedCollaborator.Initials</span>
+                                            }
+                                        </div>
+                                        <SantaHat />
+                                    </div>
+                                </div>
+                                <div class="col">
+                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                        <h5 class="fw-bold mb-0 text-dark">@selectedCollaborator.FullName</h5>
+                                        <span class="badge bg-primary text-white rounded-pill px-2.5 py-0.5 small" style="background-color: var(--bnc-navy) !important; font-size: 0.72rem;">
+                                            @(selectedCollaborator.Department ?? "Oficina Principal")
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted d-flex align-items-center gap-1.5 flex-wrap">
+                                        <span class="text-warning fw-bold">📍 Ubicación:</span>
+                                        <span class="text-dark fw-semibold">@selectedDeskLocation</span>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2 mt-1.5 flex-wrap small">
+                                        @if (selectedCollaborator.HasCustomLikes)
+                                        {
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0.5">
+                                                🎁 @selectedCollaborator.LikesList.Count gustos registrados
+                                            </span>
+                                        }
+                                        @if (selectedCollaborator.HasGiftReference)
+                                        {
+                                            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-0.5">
+                                                ⭐ Propuesta de regalo lista
+                                            </span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(selectedCollaborator.ShirtSize))
+                                        {
+                                            <span class="badge bg-light text-secondary border px-2 py-0.5">
+                                                👕 Talla: @selectedCollaborator.ShirtSize
+                                            </span>
+                                        }
+                                        @if (!string.IsNullOrEmpty(selectedCollaborator.ShoeSize))
+                                        {
+                                            <span class="badge bg-light text-secondary border px-2 py-0.5">
+                                                👟 Calzado: @selectedCollaborator.ShoeSize
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-12 col-md-auto text-md-end mt-2 mt-md-0">
+                                    <button type="button" class="btn btn-bnc-orange px-3.5 py-2 d-inline-flex align-items-center gap-2 fw-semibold shadow-sm w-100 w-md-auto" @onclick="ViewPersonDetailAsync">
+                                        <SvgIcon Name="gift" Size="16" />
+                                        <span>Ver Ficha de Regalos</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- MAIN VIEWPORT: INTERACTIVE BLUEPRINT 2.0 OR ORIGINAL IMAGE (ONLY THIS SCROLLS) -->
+                    @if (viewMode == "interactive")
+                    {
+                        <div class="office-blueprint-viewport shadow-inner">
+                            <div class="blueprint-canvas" style="transform: scale(@(zoomLevel / 100.0));">
+                                
+                                <!-- ================= PISO 1 ================= -->
+                                <div class="blueprint-floor-container mb-4">
+                                    <div class="blueprint-floor-badge d-flex align-items-center gap-1.5">
+                                        <SvgIcon Name="building" Size="14" />
+                                        <span>PISO 1 • OFICINA PRINCIPAL</span>
+                                    </div>
+
+                                    <!-- TOP ROW: ATM/POS TABLE (NO DESKS), PASILLO, MESONES, PASILLO, CONTACT CENTER -->
+                                    <div class="d-flex align-items-stretch gap-4 mt-2">
+                                        
+                                        <!-- SECTOR OESTE / ATM & POS (ÁREA DE BANCO DE PRUEBAS / EQUIPOS - SIN COLABORADORES) -->
+                                        <div class="blueprint-zone-card zone-atm d-flex flex-column justify-content-center align-items-center text-center p-3 shadow-xs" style="width: 320px; height: 175px;">
+                                            <div class="p-2.5 rounded-circle bg-white text-info shadow-xs mb-2">
+                                                <SvgIcon Name="server" Size="24" />
+                                            </div>
+                                            <h6 class="fw-bold text-uppercase text-dark mb-1" style="letter-spacing: 0.08em; font-size: 0.88rem;">
+                                                ATM / POS
+                                            </h6>
+                                            <small class="text-muted" style="font-size: 0.72rem;">Banco de Equipos & Pruebas Técnicas</small>
+                                        </div>
+
+                                        <!-- PASILLO / ESPACIO EN BLANCO VACANTE ENTRE ATM/POS Y MESÓN CENTRAL -->
+                                        <div style="width: 40px;" class="d-flex align-items-center justify-content-center">
+                                            <div style="border-left: 1.5px dashed #cbd5e1; height: 75%;"></div>
+                                        </div>
+
+                                        <!-- MESÓN CENTRAL & MESÓN NORTE (CON SUS PUESTOS Y ESPACIOS VACANTES) -->
+                                        <div class="blueprint-zone-card zone-meson d-flex align-items-stretch gap-3 p-3 shadow-xs" style="min-width: 620px;">
+                                            <!-- Mesón Central -->
+                                            <div class="d-flex flex-column justify-content-between p-2 rounded-3 bg-white bg-opacity-60 border border-success border-opacity-25" style="width: 290px;">
+                                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-success border-opacity-20">
+                                                    <span class="badge bg-success text-white text-uppercase px-2 py-0.5 fw-bold" style="font-size: 0.68rem; background-color: #059669 !important;">
+                                                        ⚡ Mesón Central
+                                                    </span>
+                                                    <small class="text-muted fw-semibold">4 Puestos</small>
+                                                </div>
+
+                                                <div class="d-flex gap-2">
+                                                    <!-- Col 1: Vacante, Abraham, Yessika, Espacio -->
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 130px;">
+                                                        @RenderEmptyDesk("—")
+                                                        @RenderDesk("Abraham Figueroa", "meson", "Piso 1 • Mesón Central")
+                                                        @RenderDesk("Yessika Mata", "meson", "Piso 1 • Mesón Central")
+                                                        <div style="height: 38px;"></div>
+                                                    </div>
+                                                    <!-- Col 2: Rosbel, Junior, Vacante, Sonsire -->
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 130px;">
+                                                        @RenderDesk("Rosbel Rodríguez", "meson", "Piso 1 • Mesón Central")
+                                                        @RenderDesk("Junior Romero", "meson", "Piso 1 • Mesón Central")
+                                                        @RenderEmptyDesk("—")
+                                                        @RenderGuestDesk("Sonsire", "Piso 1 • Mesón Central")
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Divisor entre Mesones -->
+                                            <div style="border-left: 1.5px dashed #10b981; opacity: 0.35;"></div>
+
+                                            <!-- Mesón Norte -->
+                                            <div class="d-flex flex-column justify-content-between p-2 rounded-3 bg-white bg-opacity-60 border border-success border-opacity-25" style="width: 290px;">
+                                                <div class="d-flex align-items-center justify-content-between mb-2 pb-1 border-bottom border-success border-opacity-20">
+                                                    <span class="badge bg-success text-white text-uppercase px-2 py-0.5 fw-bold" style="font-size: 0.68rem; background-color: #059669 !important;">
+                                                        ⚡ Mesón Norte
+                                                    </span>
+                                                    <small class="text-muted fw-semibold">6 Puestos</small>
+                                                </div>
+
+                                                <div class="d-flex gap-2">
+                                                    <!-- Col 1: Espacio alineado con Obelmejía, Yhusleika (con Enrique), Rafael (con Andrés), Espacio (con Miguel), Vacante -->
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 130px;">
+                                                        <div style="height: 38px;"></div>
+                                                        @RenderDesk("Yhusleika Molina", "meson", "Piso 1 • Mesón Norte")
+                                                        @RenderDesk("Rafael Lozano", "meson", "Piso 1 • Mesón Norte")
+                                                        <div style="height: 38px;"></div>
+                                                        @RenderEmptyDesk("—")
+                                                    </div>
+                                                    <!-- Col 2: Victor Obelmejía, Enrique, Andrés, Miguel, Vacante -->
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 130px;">
+                                                        @RenderDesk("Victor Obelmejía", "meson", "Piso 1 • Bloque Norte")
+                                                        @RenderDesk("Enrique Sanchez", "meson", "Piso 1 • Bloque Norte")
+                                                        @RenderDesk("Andrés Parra", "meson", "Piso 1 • Bloque Norte")
+                                                        @RenderDesk("Miguel Suarez", "meson", "Piso 1 • Bloque Norte")
+                                                        @RenderEmptyDesk("—")
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- PASILLO / ESPACIO EN BLANCO VACANTE ENTRE MESÓN NORTE Y CONTACT CENTER -->
+                                        <div style="width: 80px;" class="d-flex align-items-center justify-content-center">
+                                            <div style="border-left: 1.5px dashed #cbd5e1; height: 75%;"></div>
+                                        </div>
+
+                                        <!-- CONTACT CENTER (ÁREA OPERATIVA) -->
+                                        <div class="blueprint-zone-card zone-contact-center d-flex flex-column justify-content-center align-items-center text-center p-3 shadow-xs" style="width: 360px; height: 175px;">
+                                            <div class="p-2.5 rounded-circle bg-white shadow-xs text-primary mb-2">
+                                                <SvgIcon Name="headphones" Size="26" />
+                                            </div>
+                                            <h6 class="fw-bold text-uppercase text-dark mb-1" style="letter-spacing: 0.08em; font-size: 0.88rem;">
+                                                Contact Center
+                                            </h6>
+                                            <small class="text-muted" style="font-size: 0.72rem;">Área Operativa & Soporte Telefónico</small>
+                                        </div>
+                                    </div>
+
+                                    <!-- PASILLO CENTRAL / HALLWAY WITH DOOR & BREAKOUT TABLE -->
+                                    <div class="blueprint-hallway-divider my-4">
+                                        <span class="blueprint-hallway-label">PASILLO CENTRAL • PISO 1</span>
+                                    </div>
+
+                                    <!-- BOTTOM ROW: ENTRADA OESTE, ISLAS Y FILAS SUR (MESAS 1 A 11) -->
+                                    <div class="mb-2">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <span class="badge text-white text-uppercase px-2.5 py-1 fw-bold" style="background-color: var(--bnc-navy); font-size: 0.7rem;">
+                                                👥 Fila Sur • Puestos & Mesas (Sector Oeste a Este)
+                                            </span>
+                                            <small class="text-muted fw-semibold">36 Puestos en Fila Principal</small>
+                                        </div>
+
+                                        <div class="d-flex align-items-stretch gap-2 flex-nowrap overflow-x-auto pb-2">
+                                            
+                                            <!-- SALA DE REUNIÓN / ENTRADA PUERTA OESTE (MESA CON 4 SILLAS) -->
+                                            <div class="d-flex flex-column align-items-center justify-content-center px-2 py-1 rounded-3 border bg-light" title="Puerta Entrada Oeste & Mesa de Reunión" style="width: 72px;">
+                                                <span class="badge bg-secondary text-white small mb-1" style="font-size: 0.60rem;">ENTRADA</span>
+                                                <div class="blueprint-round-table mb-1" style="width: 40px; height: 40px;">
+                                                    <span style="font-size: 0.65rem;">🚪</span>
+                                                </div>
+                                                <small class="text-muted text-center" style="font-size: 0.60rem;">Reunión</small>
+                                            </div>
+
+                                            <!-- ALEXANDER DIAZ (ORIENTADO VERTICALMENTE EN LA ENTRADA OESTE) -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-center" style="width: 130px;" title="Puesto Entrada Oeste">
+                                                <small class="text-muted fw-bold text-center mb-1" style="font-size: 0.68rem;">ENTRADA OESTE</small>
+                                                @RenderDesk("Alexander Diaz", "oeste", "Piso 1 • Entrada Oeste (Junto a Sala)")
+                                            </div>
+
+                                            <!-- KARILYN CARVAJAL -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-center" style="width: 130px;" title="Bloque Oeste">
+                                                <small class="text-muted fw-bold text-center mb-1" style="font-size: 0.68rem;">OESTE</small>
+                                                @RenderDesk("Karilyn Carvajal", "oeste", "Piso 1 • Bloque Oeste (Frente a ATM/POS)")
+                                            </div>
+
+                                            <!-- EDINSON CABELLO & YLDEMARO ROMERO -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-center gap-1.5" style="width: 130px;" title="Bloque Oeste">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">OESTE</small>
+                                                @RenderDesk("Edinson Cabello", "oeste", "Piso 1 • Bloque Oeste")
+                                                @RenderDesk("Yldemaro Romero", "oeste", "Piso 1 • Bloque Oeste")
+                                            </div>
+
+                                            <!-- JESÚS COLINA, VACANTE, ZENON AVARIANO -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-center gap-1.5" style="width: 130px;" title="Bloque Oeste">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">OESTE</small>
+                                                @RenderDesk("Jesús Colina", "oeste", "Piso 1 • Bloque Oeste")
+                                                @RenderEmptyDesk("—")
+                                                @RenderDesk("Zenon Avariano", "oeste", "Piso 1 • Bloque Oeste")
+                                            </div>
+
+                                            <!-- ISLA VACANTE (ESPACIO EN BLANCO: 3 PUESTOS VACANTES) -->
+                                            <div class="p-2 rounded-3 border d-flex flex-column justify-content-center gap-1.5" style="width: 110px; background: rgba(0,0,0,0.02); border-style: dashed !important;" title="Isla Disponible">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.65rem;">DISPONIBLE</small>
+                                                @RenderEmptyDesk("—")
+                                                @RenderEmptyDesk("—")
+                                                @RenderEmptyDesk("—")
+                                            </div>
+
+                                            <!-- MESA 1 (SHEYLA, TOKIO, MESÓN) -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 200px;" title="Mesa 1">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 1</small>
+                                                <div class="d-flex gap-1.5">
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 95px;">
+                                                        @RenderDesk("Sheyla Tovar", "filasur", "Piso 1 • Fila Sur (Mesa 1)")
+                                                        @RenderEmptyDesk("Mesón")
+                                                    </div>
+                                                    <div class="d-flex flex-column gap-1.5 flex-grow-1" style="width: 95px;">
+                                                        @RenderDesk("Tokio Franco", "filasur", "Piso 1 • Fila Sur (Mesa 1)")
+                                                        @RenderEmptyDesk("Mesón")
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- MESA 2 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 2">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 2</small>
+                                                @RenderDesk("Lileska Romero", "filasur", "Piso 1 • Fila Sur (Mesa 2)")
+                                                @RenderDesk("Greadary Garcia", "filasur", "Piso 1 • Fila Sur (Mesa 2)")
+                                                @RenderDesk("Michael Bastidas", "filasur", "Piso 1 • Fila Sur (Mesa 2)")
+                                            </div>
+
+                                            <!-- MESA 3 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 3">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 3</small>
+                                                @RenderDesk("Eduardo Lobo", "filasur", "Piso 1 • Fila Sur (Mesa 3)")
+                                                @RenderDesk("Gustavo Suarez", "filasur", "Piso 1 • Fila Sur (Mesa 3)")
+                                                @RenderDesk("Pablo Romero", "filasur", "Piso 1 • Fila Sur (Mesa 3)")
+                                            </div>
+
+                                            <!-- MESA 4 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 4">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 4</small>
+                                                @RenderEmptyDesk("—")
+                                                @RenderDesk("Nestor Villegas", "filasur", "Piso 1 • Fila Sur (Mesa 4)")
+                                                @RenderDesk("Jose Manuel Quintal", "filasur", "Piso 1 • Fila Sur (Mesa 4)")
+                                            </div>
+
+                                            <!-- MESA 5 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 5">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 5</small>
+                                                @RenderDesk("Alix Puello", "filasur", "Piso 1 • Fila Sur (Mesa 5)")
+                                                @RenderDesk("Sorianyely Morin", "filasur", "Piso 1 • Fila Sur (Mesa 5)")
+                                                @RenderDesk("Wilmary Maduro", "filasur", "Piso 1 • Fila Sur (Mesa 5)")
+                                            </div>
+
+                                            <!-- MESA 6 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 6">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 6</small>
+                                                @RenderDesk("Carlos Nuñez", "filasur", "Piso 1 • Fila Sur (Mesa 6)")
+                                                @RenderDesk("Keynner Aguilar", "filasur", "Piso 1 • Fila Sur (Mesa 6)")
+                                                @RenderDesk("Leonardo Chacón", "filasur", "Piso 1 • Fila Sur (Mesa 6)")
+                                            </div>
+
+                                            <!-- MESA 7 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 7">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 7</small>
+                                                @RenderDesk("George Embaid", "filasur", "Piso 1 • Fila Sur (Mesa 7)")
+                                                @RenderDesk("Jesús Gomes", "filasur", "Piso 1 • Fila Sur (Mesa 7)")
+                                                @RenderDesk("Kevin Solorzano", "filasur", "Piso 1 • Fila Sur (Mesa 7)")
+                                            </div>
+
+                                            <!-- ROUND MEETING TABLE (ENTRE MESA 7 Y MESA 8) -->
+                                            <div class="d-flex flex-column align-items-center justify-content-center px-1" title="Mesa Redonda de Reunión">
+                                                <div class="blueprint-round-table">
+                                                    <span style="font-size: 0.65rem;">🪑</span>
+                                                </div>
+                                            </div>
+
+                                            <!-- MESA 8 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 8">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 8</small>
+                                                @RenderDesk("Erick Adames", "filasur", "Piso 1 • Fila Sur (Mesa 8)")
+                                                @RenderDesk("Jonathan Colucci", "filasur", "Piso 1 • Fila Sur (Mesa 8)")
+                                                @RenderEmptyDesk("—")
+                                            </div>
+
+                                            <!-- MESA 9 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 9">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 9</small>
+                                                @RenderDesk("Darwin García", "filasur", "Piso 1 • Fila Sur (Mesa 9)")
+                                                @RenderDesk("José Sanabria", "filasur", "Piso 1 • Fila Sur (Mesa 9)")
+                                                @RenderDesk("Pablo Barboza", "filasur", "Piso 1 • Fila Sur (Mesa 9)")
+                                            </div>
+
+                                            <!-- MESA 10 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 10">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 10</small>
+                                                @RenderDesk("Katherine Mendible", "filasur", "Piso 1 • Fila Sur (Mesa 10)")
+                                                @RenderDesk("Jesús Noguera", "filasur", "Piso 1 • Fila Sur (Mesa 10)")
+                                                @RenderDesk("Susana Escobar", "filasur", "Piso 1 • Fila Sur (Mesa 10)")
+                                            </div>
+
+                                            <!-- MESA 11 -->
+                                            <div class="p-2 rounded-3 bg-light border d-flex flex-column justify-content-between gap-1.5" style="min-width: 132px;" title="Mesa 11">
+                                                <small class="text-muted fw-bold text-center" style="font-size: 0.68rem;">MESA 11</small>
+                                                @RenderDesk("Gabriel Tagliafico", "filasur", "Piso 1 • Fila Sur (Mesa 11)")
+                                                @RenderDesk("Albert Rangel", "filasur", "Piso 1 • Fila Sur (Mesa 11)")
+                                                @RenderDesk("Kervin Azuaje", "filasur", "Piso 1 • Fila Sur (Mesa 11)")
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- BARRA PERIMETRAL SUR (CON PUESTOS VACANTES Y ALINEACIÓN EXACTA) -->
+                                    <div class="mt-3 pt-2 border-top">
+                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                            <span class="badge text-white text-uppercase px-2.5 py-1 fw-bold" style="background-color: #6366f1; font-size: 0.7rem;">
+                                                🪑 Barra Perimetral Sur
+                                            </span>
+                                            <small class="text-muted fw-semibold">4 Puestos Asignados + Secciones Libres</small>
+                                        </div>
+
+                                        <div class="d-flex align-items-center gap-3 p-2 rounded-3 bg-light border flex-nowrap overflow-x-auto">
+                                            <!-- Espacios vacantes en la barra oeste -->
+                                            <div style="width: 140px;">
+                                                @RenderEmptyDesk("Barra Libre")
+                                            </div>
+                                            <div style="width: 140px;">
+                                                @RenderEmptyDesk("Barra Libre")
+                                            </div>
+                                            <div style="width: 140px;">
+                                                @RenderEmptyDesk("Barra Libre")
+                                            </div>
+
+                                            <!-- Puestos asignados en la barra -->
+                                            <div style="width: 145px;">
+                                                @RenderDesk("Jose Luis Reyes", "barrasur", "Piso 1 • Barra Perimetral Sur")
+                                            </div>
+                                            <div style="width: 145px;">
+                                                @RenderDesk("Sarahy Barragán", "barrasur", "Piso 1 • Barra Perimetral Sur")
+                                            </div>
+                                            <div style="width: 145px;">
+                                                @RenderDesk("Luis Rendon", "barrasur", "Piso 1 • Barra Perimetral Sur")
+                                            </div>
+                                            <div style="width: 145px;">
+                                                @RenderDesk("Julián Esteves", "barrasur", "Piso 1 • Barra Perimetral Sur (Extremo Este)")
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- ================= PLANTA BAJA (PB) ================= -->
+                                <div class="blueprint-floor-container">
+                                    <div class="blueprint-floor-badge d-flex align-items-center gap-1.5" style="background-color: var(--bnc-orange) !important; border-color: #fff;">
+                                        <SvgIcon Name="building" Size="14" />
+                                        <span>PLANTA BAJA (PB) • ENTRADA / RECEPCIÓN</span>
+                                    </div>
+
+                                    <div class="d-flex align-items-center justify-content-between gap-3 mt-2 flex-wrap">
+                                        <div class="zone-pb-card d-flex align-items-center gap-3">
+                                            <div class="p-2 rounded-circle bg-white text-warning shadow-xs">
+                                                <SvgIcon Name="map-pin" Size="20" />
+                                            </div>
+                                            <div>
+                                                <h6 class="fw-bold mb-0 text-dark">Puesto Individual PB</h6>
+                                                <small class="text-muted">Área de acceso y recepción en Planta Baja</small>
+                                            </div>
+                                            <div class="ms-3" style="width: 145px;">
+                                                @RenderDesk("Jhon Erice", "pb", "PB (Planta Baja)")
+                                            </div>
+                                        </div>
+
+                                        <div class="text-muted small fst-italic">
+                                            💡 1 Colaborador ubicado permanentemente en Planta Baja.
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- ORIGINAL IMAGE VIEW WITH ZOOM -->
+                        <div class="office-map-canvas-container shadow-inner">
+                            <div style="overflow: visible; display: inline-block;">
+                                <img src="images/mapa_oficina.png" 
+                                     alt="Plano Original de Oficina y Distribución de Puestos" 
+                                     class="office-map-img"
+                                     style="transform: scale(@(zoomLevel / 100.0)); transform-origin: top left; min-width: 900px;" />
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Quick Reference Legend & Stats -->
+                    <div class="mt-2 p-2 rounded-3 bg-light border d-flex flex-wrap align-items-center justify-content-between gap-2 small text-muted flex-shrink-0">
+                        <div class="d-flex flex-wrap align-items-center gap-2">
+                            <span class="fw-bold text-dark d-inline-flex align-items-center gap-1">
+                                <SvgIcon Name="map-pin" Size="14" Class="text-warning" /> Convenciones:
+                            </span>
+                            <span class="badge bg-white text-secondary border">PB: 1 Puesto</span>
+                            <span class="badge bg-white text-secondary border">Piso 1: 50 Puestos</span>
+                            <span class="badge bg-white text-secondary border">🎁 Tiene gustos/regalos</span>
+                            <span class="badge bg-white text-secondary border">📍 Coincidencia de búsqueda</span>
+                        </div>
+                        <small class="text-muted fst-italic">
+                            💡 Haz clic en cualquier puesto para ver la ficha del compañero.
+                        </small>
+                    </div>
+                </div>
+
+                <!-- Modal Footer (Fixed height, no scroll, mobile-first responsive) -->
+                <div class="bnc-modal-footer p-2.5 px-md-4 border-top d-flex align-items-center justify-content-between bg-light flex-shrink-0">
+                    <span class="text-muted small d-none d-sm-inline">
+                        <strong>Tip:</strong> Puedes alternar entre el <strong>Plano Interactivo 2.0</strong> y el <strong>Diagrama Original</strong> en la barra superior.
+                    </span>
+                    <span class="text-muted small d-inline d-sm-none" style="font-size: 0.72rem;">
+                        👉 Desliza para explorar puestos
+                    </span>
+                    <button type="button" class="btn btn-secondary px-3.5 px-sm-4 py-1.5 fw-semibold ms-auto ms-sm-0" @onclick="CloseAsync">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public bool IsVisible { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public List<Person> People { get; set; } = new();
+    [Parameter] public EventCallback<Person> OnPersonSelected { get; set; }
+
+    private string viewMode = "interactive"; // "interactive" or "original"
+    private string searchName = string.Empty;
+    private string selectedZone = "all"; // "all", "pb", "oeste", "meson", "filasur", "barrasur"
+    private int zoomLevel = 85; // Default 85% as requested by user
+
+    private Person? selectedCollaborator;
+    private string selectedDeskZone = string.Empty;
+    private string selectedDeskLocation = string.Empty;
+
+    private void ZoomIn()
+    {
+        if (zoomLevel < 150) zoomLevel += 15;
+    }
+
+    private void ZoomOut()
+    {
+        if (zoomLevel > 45) zoomLevel -= 15;
+    }
+
+    private void ResetZoom()
+    {
+        zoomLevel = 85;
+    }
+
+    private void SetZone(string zone)
+    {
+        selectedZone = zone;
+    }
+
+    private void ResetFilters()
+    {
+        searchName = string.Empty;
+        selectedZone = "all";
+        zoomLevel = 85;
+        selectedCollaborator = null;
+    }
+
+    private void ClearSearch()
+    {
+        searchName = string.Empty;
+    }
+
+    private void ClearSelection()
+    {
+        selectedCollaborator = null;
+        selectedDeskLocation = string.Empty;
+    }
+
+    private async Task CloseAsync()
+    {
+        searchName = string.Empty;
+        selectedCollaborator = null;
+        zoomLevel = 85;
+        await OnClose.InvokeAsync();
+    }
+
+    private void SelectDesk(string personName, string zone, string locationLabel)
+    {
+        var person = FindPerson(personName);
+        if (person != null)
+        {
+            selectedCollaborator = person;
+            selectedDeskZone = zone;
+            selectedDeskLocation = locationLabel;
+        }
+    }
+
+    private void SelectPersonFromSearch(Person person)
+    {
+        selectedCollaborator = person;
+        selectedDeskLocation = GetLocationFor(person);
+        // Switch to the zone where they sit
+        if (LocationZoneMap.TryGetValue(person.FullName, out var zone))
+        {
+            selectedZone = zone;
+        }
+    }
+
+    private async Task ViewPersonDetailAsync()
+    {
+        if (selectedCollaborator != null)
+        {
+            var p = selectedCollaborator;
+            await OnPersonSelected.InvokeAsync(p);
+            await CloseAsync();
+        }
+    }
+
+    private Person? FindPerson(string fullName)
+    {
+        return People.FirstOrDefault(p => string.Equals(p.FullName, fullName, StringComparison.OrdinalIgnoreCase))
+            ?? People.FirstOrDefault(p => p.FullName.Contains(fullName, StringComparison.OrdinalIgnoreCase) || fullName.Contains(p.FullName, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private string FormatDisplayName(Person? person, string fallbackName)
+    {
+        if (person != null)
+        {
+            var first = person.FirstName.Trim();
+            var last = person.LastName.Trim();
+            if (first.Equals("Jose Manuel", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Jose M. Q.";
+            }
+            if (first.Equals("Jose Luis", StringComparison.OrdinalIgnoreCase))
+            {
+                return "Jose L. R.";
+            }
+            var initial = !string.IsNullOrEmpty(last) ? $"{char.ToUpperInvariant(last[0])}." : "";
+            return string.IsNullOrEmpty(initial) ? first : $"{first} {initial}";
+        }
+
+        var parts = fallbackName.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 2)
+        {
+            if (parts[0].Equals("Jose", StringComparison.OrdinalIgnoreCase) && parts.Length >= 3)
+            {
+                return $"{parts[0]} {char.ToUpperInvariant(parts[1][0])}. {char.ToUpperInvariant(parts[^1][0])}.";
+            }
+            return $"{parts[0]} {char.ToUpperInvariant(parts[^1][0])}.";
+        }
+        return fallbackName;
+    }
+
+    private bool IsMatched(string personName)
+    {
+        if (string.IsNullOrWhiteSpace(searchName)) return false;
+        var q = searchName.Trim().ToLowerInvariant();
+        var person = FindPerson(personName);
+        if (person != null)
+        {
+            return person.FullName.ToLowerInvariant().Contains(q) ||
+                   person.FirstName.ToLowerInvariant().Contains(q) ||
+                   person.LastName.ToLowerInvariant().Contains(q);
+        }
+        return personName.ToLowerInvariant().Contains(q);
+    }
+
+    private bool IsActiveDesk(string personName)
+    {
+        if (selectedCollaborator == null) return false;
+        return string.Equals(selectedCollaborator.FullName, personName, StringComparison.OrdinalIgnoreCase) ||
+               selectedCollaborator.FullName.Contains(personName, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private bool IsDimmed(string zone, string personName)
+    {
+        // If a specific zone is selected, dim others
+        if (selectedZone != "all" && !string.Equals(selectedZone, zone, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // If search is active and this person doesn't match, dim it
+        if (!string.IsNullOrWhiteSpace(searchName) && !IsMatched(personName))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    private List<Person> MatchedParticipants
+    {
+        get
+        {
+            if (string.IsNullOrWhiteSpace(searchName)) return new List<Person>();
+            var q = searchName.Trim().ToLowerInvariant();
+            return People
+                .Where(p => p.FullName.ToLowerInvariant().Contains(q) ||
+                            p.FirstName.ToLowerInvariant().Contains(q) ||
+                            p.LastName.ToLowerInvariant().Contains(q))
+                .ToList();
+        }
+    }
+
+    private static readonly Dictionary<string, string> LocationZoneMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Jhon Erice", "pb" },
+        { "Alexander Diaz", "oeste" },
+        { "Karilyn Carvajal", "oeste" },
+        { "Edinson Cabello", "oeste" },
+        { "Yldemaro Romero", "oeste" },
+        { "Zenon Avariano", "oeste" },
+        { "Jesús Colina", "oeste" },
+        { "Rosbel Rodríguez", "meson" },
+        { "Junior Romero", "meson" },
+        { "Abraham Figueroa", "meson" },
+        { "Yessika Mata", "meson" },
+        { "Yhusleika Molina", "meson" },
+        { "Rafael Lozano", "meson" },
+        { "Victor Obelmejía", "meson" },
+        { "Enrique Sanchez", "meson" },
+        { "Andrés Parra", "meson" },
+        { "Miguel Suarez", "meson" },
+        { "Sheyla Tovar", "filasur" },
+        { "Tokio Franco", "filasur" },
+        { "Lileska Romero", "filasur" },
+        { "Greadary Garcia", "filasur" },
+        { "Michael Bastidas", "filasur" },
+        { "Eduardo Lobo", "filasur" },
+        { "Gustavo Suarez", "filasur" },
+        { "Pablo Romero", "filasur" },
+        { "Nestor Villegas", "filasur" },
+        { "Jose Manuel Quintal", "filasur" },
+        { "Alix Puello", "filasur" },
+        { "Sorianyely Morin", "filasur" },
+        { "Wilmary Maduro", "filasur" },
+        { "Carlos Nuñez", "filasur" },
+        { "Keynner Aguilar", "filasur" },
+        { "Leonardo Chacón", "filasur" },
+        { "George Embaid", "filasur" },
+        { "Jesús Gomes", "filasur" },
+        { "Kevin Solorzano", "filasur" },
+        { "Erick Adames", "filasur" },
+        { "Jonathan Colucci", "filasur" },
+        { "Darwin García", "filasur" },
+        { "José Sanabria", "filasur" },
+        { "Pablo Barboza", "filasur" },
+        { "Katherine Mendible", "filasur" },
+        { "Jesús Noguera", "filasur" },
+        { "Susana Escobar", "filasur" },
+        { "Gabriel Tagliafico", "filasur" },
+        { "Albert Rangel", "filasur" },
+        { "Kervin Azuaje", "filasur" },
+        { "Jose Luis Reyes", "barrasur" },
+        { "Sarahy Barragán", "barrasur" },
+        { "Luis Rendon", "barrasur" },
+        { "Julián Esteves", "barrasur" }
+    };
+
+    private static readonly Dictionary<string, string> LocationMap = new(StringComparer.OrdinalIgnoreCase)
+    {
+        { "Jhon Erice", "PB (Planta Baja)" },
+        { "Alexander Diaz", "Piso 1 • Entrada Oeste (Junto a Sala)" },
+        { "Karilyn Carvajal", "Piso 1 • Bloque Oeste (Frente a ATM/POS)" },
+        { "Edinson Cabello", "Piso 1 • Bloque Oeste (Frente a ATM/POS, junto a Yldemaro)" },
+        { "Yldemaro Romero", "Piso 1 • Bloque Oeste (Frente a ATM/POS, junto a Edinson)" },
+        { "Zenon Avariano", "Piso 1 • Bloque Oeste (Frente a ATM/POS, junto a Jesús Colina)" },
+        { "Jesús Colina", "Piso 1 • Bloque Oeste (Frente a ATM/POS, junto a Zenon)" },
+        { "Rosbel Rodríguez", "Piso 1 • Mesón Central Norte (Arriba)" },
+        { "Junior Romero", "Piso 1 • Mesón Central Norte (Medio)" },
+        { "Abraham Figueroa", "Piso 1 • Mesón Central Norte (Abajo)" },
+        { "Yessika Mata", "Piso 1 • Mesón Central Norte (Abajo)" },
+        { "Yhusleika Molina", "Piso 1 • Mesón Norte (Izquierda)" },
+        { "Rafael Lozano", "Piso 1 • Mesón Norte (Izquierda)" },
+        { "Victor Obelmejía", "Piso 1 • Bloque Norte (Arriba)" },
+        { "Enrique Sanchez", "Piso 1 • Bloque Norte (Medio-Arriba)" },
+        { "Andrés Parra", "Piso 1 • Bloque Norte (Medio)" },
+        { "Miguel Suarez", "Piso 1 • Bloque Norte (Abajo)" },
+        { "Sheyla Tovar", "Piso 1 • Fila Sur (Mesa 1)" },
+        { "Tokio Franco", "Piso 1 • Fila Sur (Mesa 1)" },
+        { "Lileska Romero", "Piso 1 • Fila Sur (Mesa 2)" },
+        { "Greadary Garcia", "Piso 1 • Fila Sur (Mesa 2)" },
+        { "Michael Bastidas", "Piso 1 • Fila Sur (Mesa 2)" },
+        { "Eduardo Lobo", "Piso 1 • Fila Sur (Mesa 3)" },
+        { "Gustavo Suarez", "Piso 1 • Fila Sur (Mesa 3)" },
+        { "Pablo Romero", "Piso 1 • Fila Sur (Mesa 3)" },
+        { "Nestor Villegas", "Piso 1 • Fila Sur (Mesa 4)" },
+        { "Jose Manuel Quintal", "Piso 1 • Fila Sur (Mesa 4)" },
+        { "Alix Puello", "Piso 1 • Fila Sur (Mesa 5)" },
+        { "Sorianyely Morin", "Piso 1 • Fila Sur (Mesa 5)" },
+        { "Wilmary Maduro", "Piso 1 • Fila Sur (Mesa 5)" },
+        { "Carlos Nuñez", "Piso 1 • Fila Sur (Mesa 6)" },
+        { "Keynner Aguilar", "Piso 1 • Fila Sur (Mesa 6)" },
+        { "Leonardo Chacón", "Piso 1 • Fila Sur (Mesa 6)" },
+        { "George Embaid", "Piso 1 • Fila Sur (Mesa 7)" },
+        { "Jesús Gomes", "Piso 1 • Fila Sur (Mesa 7)" },
+        { "Kevin Solorzano", "Piso 1 • Fila Sur (Mesa 7)" },
+        { "Erick Adames", "Piso 1 • Fila Sur (Mesa 8)" },
+        { "Jonathan Colucci", "Piso 1 • Fila Sur (Mesa 8)" },
+        { "Darwin García", "Piso 1 • Fila Sur (Mesa 9)" },
+        { "José Sanabria", "Piso 1 • Fila Sur (Mesa 9)" },
+        { "Pablo Barboza", "Piso 1 • Fila Sur (Mesa 9)" },
+        { "Katherine Mendible", "Piso 1 • Fila Sur (Mesa 10)" },
+        { "Jesús Noguera", "Piso 1 • Fila Sur (Mesa 10)" },
+        { "Susana Escobar", "Piso 1 • Fila Sur (Mesa 10)" },
+        { "Gabriel Tagliafico", "Piso 1 • Fila Sur (Mesa 11)" },
+        { "Albert Rangel", "Piso 1 • Fila Sur (Mesa 11)" },
+        { "Kervin Azuaje", "Piso 1 • Fila Sur (Mesa 11)" },
+        { "Jose Luis Reyes", "Piso 1 • Barra Perimetral Sur" },
+        { "Sarahy Barragán", "Piso 1 • Barra Perimetral Sur" },
+        { "Luis Rendon", "Piso 1 • Barra Perimetral Sur" },
+        { "Julián Esteves", "Piso 1 • Barra Perimetral Sur (Extremo Este)" }
+    };
+
+    private string GetLocationFor(Person p)
+    {
+        if (LocationMap.TryGetValue(p.FullName, out var loc)) return loc;
+        return "Piso 1 • Oficina";
+    }
+
+    private RenderFragment RenderDesk(string personName, string zone, string locationLabel, string? labelOverride = null)
+    {
+        var person = FindPerson(personName);
+        var isMatched = IsMatched(personName);
+        var isActive = IsActiveDesk(personName);
+        var isDimmed = IsDimmed(zone, personName);
+        var displayName = labelOverride ?? FormatDisplayName(person, personName);
+
+        return @<div class="blueprint-desk @(isMatched ? "is-matched" : "") @(isActive ? "is-active" : "") @(isDimmed ? "is-dimmed" : "")"
+                     @onclick="() => SelectDesk(personName, zone, locationLabel)"
+                     title="@(person != null ? $"{person.FullName} • {locationLabel}" : personName)">
+            @if (isMatched)
+            {
+                <span class="position-absolute top-0 start-50 translate-middle badge rounded-pill bg-danger shadow-sm" style="font-size: 0.62rem; z-index: 25; padding: 2px 6px;">
+                    📍 Aquí
+                </span>
+            }
+
+            <div class="blueprint-avatar" style="@(person != null && !string.IsNullOrEmpty(person.ProfilePhotoPath) ? "" : GetVibrantAvatarGradient(person))">
+                @if (person != null && !string.IsNullOrEmpty(person.ProfilePhotoPath))
+                {
+                    <img src="@person.ProfilePhotoPath" alt="@displayName" />
+                }
+                else if (person != null)
+                {
+                    <span>@person.Initials</span>
+                }
+                else
+                {
+                    <SvgIcon Name="user" Size="13" />
+                }
+            </div>
+
+            <div class="blueprint-desk-name">
+                @displayName
+            </div>
+
+            @if (person != null && (person.HasCustomLikes || person.HasGiftReference))
+            {
+                <span class="ms-auto small" style="font-size: 0.68rem;" title="Tiene gustos o sugerencia de regalo cargada">
+                    🎁
+                </span>
+            }
+        </div>;
+    }
+
+    private string GetVibrantAvatarGradient(Person? person)
+    {
+        if (person == null)
+        {
+            return "background: linear-gradient(135deg, #0ea5e9, #0284c7);";
+        }
+
+        var color = person.AvatarColor?.Trim().ToUpperInvariant() ?? "#FF6600";
+        return color switch
+        {
+            "#001933" => "background: linear-gradient(135deg, #ea580c, #FF6600);", // Bright festive orange
+            "#002855" => "background: linear-gradient(135deg, #0284c7, #38bdf8);", // Bright sky/cyan
+            "#475569" => "background: linear-gradient(135deg, #8b5cf6, #ec4899);", // Radiant violet/pink for Rosbel
+            "#059669" => "background: linear-gradient(135deg, #10b981, #059669);", // Emerald green
+            "#0D9488" => "background: linear-gradient(135deg, #14b8a6, #0d9488);", // Teal
+            "#7C3AED" => "background: linear-gradient(135deg, #a855f7, #7c3aed);", // Purple
+            "#DC2626" => "background: linear-gradient(135deg, #f43f5e, #dc2626);", // Rose red
+            _ => $"background: linear-gradient(135deg, {color}, #FF6600);"
+        };
+    }
+
+    private RenderFragment RenderGuestDesk(string name, string locationLabel) =>
+        @<div class="blueprint-desk blueprint-desk-guest" 
+              title="@name • @locationLabel (Puesto físico en oficina)">
+            <div class="blueprint-avatar" style="background: linear-gradient(135deg, #818cf8, #6366f1);">
+                <span>@(name.Length >= 2 ? name.Substring(0, 2).ToUpperInvariant() : "SO")</span>
+            </div>
+            <div class="blueprint-desk-name text-muted">
+                @name
+            </div>
+            <span class="badge bg-secondary-subtle text-muted rounded-pill" style="font-size: 0.58rem; padding: 1px 4px;">
+                Oficina
+            </span>
+        </div>;
+
+    private RenderFragment RenderEmptyDesk(string label = "—") =>
+        @<div class="blueprint-desk-empty">
+            <small>@label</small>
+        </div>;
+}

@@ -12,7 +12,7 @@
 
 El **Portal Interactivo Amigo Secreto 2026** es una plataforma web corporativa desarrollada con **Blazor Interactive Server** (.NET 10) y **SQLite**, creada para gestionar el intercambio navideño de regalos de 51 colaboradores.
 
-La plataforma permite a cada participante ingresar de forma segura, personalizar su ficha (foto de perfil, preferencias de gustos, cosas a evitar, alergias, tallas de ropa y calzado, y múltiples propuestas de regalo con fotos y enlaces), explorar el directorio de compañeros mediante un carrusel de filtros por departamento, visualizar fichas en paneles deslizantes interactivos con carrusel de propuestas y descargar fichas formateadas en alta resolución generadas dinámicamente mediante HTML5 Canvas.
+La plataforma permite a cada participante ingresar de forma segura, personalizar su ficha (foto de perfil, preferencias de gustos, cosas a evitar, alergias, tallas de ropa y calzado, y múltiples propuestas de regalo con fotos y enlaces), explorar el directorio de compañeros mediante un carrusel de filtros por departamento, consultar el cronograma oficial de fechas de entrega de regalos integrado en el banner principal, visualizar fichas en paneles deslizantes interactivos con carrusel de propuestas y descargar fichas formateadas en alta resolución generadas dinámicamente mediante HTML5 Canvas.
 
 ### 🎯 Principios Clave del Sistema:
 1. **Identidad Neutral y Festiva**: Colores corporativos basados en Azul Marino Profundo (`#002855`) y Naranja Festivo (`#FF6600`), sin logotipos ni referencias a entidades financieras externas (removida toda mención a BNC o Banco Nacional de Crédito).
@@ -215,6 +215,17 @@ Ubicado en [`wwwroot/js/summaryImageGenerator.js`](file:///c:/Repositories/Antig
 
 ---
 
+## 🗺️ 7.1 Mapa Interactivo de la Oficina (`OfficeMapModal.razor`)
+
+Modal interactivo para la distribución arquitectónica de los 51 colaboradores:
+- **Plano Vectorial Interactivo 2.0:** Renderiza cada puesto de trabajo con la foto de perfil en miniatura o iniciales del colaborador, nombre, indicador de gustos/regalos cargados y halo luminoso interactivo al seleccionar o buscar.
+- **Zonas Mapeadas:** Planta Baja (PB - Jhon Erice), Sector Oeste (ATM / POS), Mesón Central & Mesón Norte, Área Contact Center, 11 Islas de Mesas en Fila Sur y Barra Perimetral Sur.
+- **Inspector de Puesto Flotante:** Al hacer clic en cualquier escritorio, despliega la ficha del colaborador con acceso directo de un clic a su detalle completo de gustos y propuestas (`PersonDetailModal`).
+- **Modo Dual:** Alternador entre el Plano Interactivo 2.0 y el diagrama escaneado original (`mapa_oficina.png`) con zoom libre.
+- **Filtros Rápidos y Búsqueda:** Búsqueda en tiempo real con animación de pulso y pin `📍`, y píldoras de filtrado rápido por zona.
+
+---
+
 ## 👥 8. Directorio Oficial de los 51 Participantes
 
 Todos los participantes están pre-registrados en la base de datos con correos bajo el dominio `@amigosecreto.local`:
@@ -292,6 +303,7 @@ c:\Repositories\Antigravity\AmigoSecreto\
 │   │   └── Error.razor              # Manejo de excepciones
 │   └── Shared/
 │       ├── BncLogo.razor            # Emblema festivo oficial (adaptativo a modo claro/oscuro)
+│       ├── OfficeMapModal.razor     # Modal interactivo del mapa de la oficina con buscador y zoom
 │       ├── PersonDetailModal.razor  # Drawer lateral con carrusel de propuestas y exportador PNG
 │       ├── PersonEditModal.razor    # Modal de edición de perfil en 3 pestañas (Scrollable)
 │       └── SvgIcon.razor            # Biblioteca de iconos SVG (sol, luna, regalo, candado, etc.)

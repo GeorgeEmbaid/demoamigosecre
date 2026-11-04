@@ -1,0 +1,89 @@
+@* Componente Decorativo: Gorrito Navideño Animado e Interactivo *@
+<div class="santa-hat-badge @Class" style="@Style" aria-hidden="true" title="¡Feliz Navidad!">
+    <svg viewBox="0 0 44 38" class="santa-hat-svg" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <!-- Degradado Terciopelo Rojo Navideño con volumen 3D -->
+            <linearGradient id="santaRedGrad" x1="10%" y1="10%" x2="90%" y2="90%">
+                <stop offset="0%" stop-color="#FF334B" />
+                <stop offset="45%" stop-color="#E11D48" />
+                <stop offset="85%" stop-color="#BE123C" />
+                <stop offset="100%" stop-color="#881337" />
+            </linearGradient>
+
+            <!-- Brillo blanco esponjoso para el pompón -->
+            <radialGradient id="pomPomGrad" cx="35%" cy="35%" r="65%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="65%" stop-color="#F8FAFC" />
+                <stop offset="100%" stop-color="#CBD5E1" />
+            </radialGradient>
+
+            <!-- Degradado para la franja de peluche blanco -->
+            <linearGradient id="furTrimGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#FFFFFF" />
+                <stop offset="70%" stop-color="#F1F5F9" />
+                <stop offset="100%" stop-color="#CBD5E1" />
+            </linearGradient>
+
+            <!-- Sombra suave para despegar el gorro del avatar -->
+            <filter id="santaShadow" x="-15%" y="-15%" width="130%" height="130%">
+                <feDropShadow dx="0" dy="2" stdDeviation="1.5" flood-color="rgba(0,0,0,0.35)" />
+            </filter>
+        </defs>
+
+        <g filter="url(#santaShadow)">
+            <!-- CUERPO DEL GORRO: Cono rojo curvado que cae hacia la derecha -->
+            <path d="M 8 26 
+                     C 10 14, 18 5, 27 4 
+                     C 32 3, 37 7, 36 12 
+                     C 35 17, 31 20, 31 23 
+                     C 30 25, 30 26, 31 26 
+                     Z" 
+                  fill="url(#santaRedGrad)" />
+
+            <!-- Pliegue y sombra interior del cono rojo -->
+            <path d="M 23 6 
+                     C 27 5, 35 9, 34 13 
+                     C 33 17, 29 20, 30 24 
+                     C 28 21, 30 14, 25 10 
+                     Z" 
+                  fill="#9F1239" opacity="0.45" />
+
+            <!-- LUZ DE CONTORNO SUPERIOR -->
+            <path d="M 10 24 
+                     C 12 15, 19 7, 26 5" 
+                  stroke="#FDA4AF" stroke-width="1.2" stroke-linecap="round" opacity="0.6" />
+
+            <!-- FRANJA DE PELUCHE BLANCO INFERIOR (BORDE ESPONJOSO) -->
+            <path d="M 6 26
+                     C 6 22, 10 21, 13 22
+                     C 16 20, 20 20, 23 22
+                     C 26 20, 30 21, 33 23
+                     C 35 24, 36 27, 34 29
+                     C 32 31, 28 30, 25 29
+                     C 22 31, 17 31, 14 29
+                     C 11 31, 7 30, 6 26 Z" 
+                  fill="url(#furTrimGrad)" />
+
+            <!-- DETALLE DECORATIVO: Hojas de Muérdago y Bayitas Doradas/Rojas -->
+            <path d="M 12 21 C 10 18, 12 16, 14 17 C 15 18, 14 20, 12 21 Z" fill="#15803D" />
+            <path d="M 15 22 C 16 19, 18 18, 18 20 C 18 21, 17 22, 15 22 Z" fill="#16A34A" />
+            <circle cx="14" cy="21" r="1.8" fill="#FBBF24" />
+            <circle cx="14" cy="21" r="0.8" fill="#FFFFFF" opacity="0.8" />
+
+            <!-- POMPÓN BLANCO EN LA PUNTA PENDIENTE -->
+            <g class="santa-pompom">
+                <!-- Sombra del pompón -->
+                <circle cx="33" cy="24" r="5.2" fill="#94A3B8" opacity="0.3" />
+                <!-- Pompón esponjoso principal -->
+                <circle cx="33" cy="23.5" r="4.8" fill="url(#pomPomGrad)" />
+                <!-- Destello de volumen -->
+                <circle cx="31.8" cy="22.2" r="1.6" fill="#FFFFFF" opacity="0.9" />
+            </g>
+        </g>
+    </svg>
+</div>
+
+@code {
+    [Parameter] public string Class { get; set; } = string.Empty;
+    [Parameter] public string Style { get; set; } = string.Empty;
+}

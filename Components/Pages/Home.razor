@@ -171,19 +171,22 @@
                     <div class="row align-items-center g-3">
                         <div class="col-12 col-lg-7">
                             <div class="d-flex align-items-center gap-3">
-                                @if (me.HasProfilePhoto)
-                                {
-                                    <img src="@me.ProfilePhotoPath" 
-                                         alt="@me.FullName" 
-                                         class="rounded-circle shadow-sm flex-shrink-0" 
-                                         style="width: 64px; height: 64px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
-                                }
-                                else
-                                {
-                                    <div class="avatar-circle flex-shrink-0" style="width: 64px; height: 64px; font-size: 1.35rem; background: linear-gradient(135deg, @(me.AvatarColor ?? "#002855"), #FF6600);">
-                                        @me.Initials
-                                    </div>
-                                }
+                                <div class="avatar-wrapper avatar-wrapper-lg flex-shrink-0">
+                                    @if (me.HasProfilePhoto)
+                                    {
+                                        <img src="@me.ProfilePhotoPath" 
+                                             alt="@me.FullName" 
+                                             class="rounded-circle shadow-sm" 
+                                             style="width: 64px; height: 64px; object-fit: cover; border: 3px solid var(--bnc-orange);" />
+                                    }
+                                    else
+                                    {
+                                        <div class="avatar-circle" style="width: 64px; height: 64px; font-size: 1.35rem; background: linear-gradient(135deg, @(me.AvatarColor ?? "#002855"), #FF6600);">
+                                            @me.Initials
+                                        </div>
+                                    }
+                                    <SantaHat />
+                                </div>
                                 <div>
                                     <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
                                         <span class="badge text-white" style="background-color: var(--bnc-navy);">Tu Perfil Activo</span>
@@ -269,14 +272,134 @@
                     </p>
                 </div>
                 <div class="col-lg-4 text-center text-lg-end mt-4 mt-lg-0">
-                    <div class="d-inline-block p-3 rounded-4 bg-white bg-opacity-10 backdrop-blur border border-white border-opacity-15 text-start shadow-sm">
+                    <div class="hero-map-trigger-card p-3 rounded-4 shadow-sm" @onclick="() => showOfficeMapModal = true" role="button" title="Haz clic para ver el mapa de distribución de puestos en la oficina">
                         <div class="d-flex align-items-center gap-3">
-                            <div class="p-3 rounded-3" style="background-color: var(--bnc-orange); color: white;">
-                                <SvgIcon Name="gift" Size="30" />
+                            <div class="hero-map-icon-box">
+                                <SvgIcon Name="map" Size="26" />
                             </div>
                             <div>
-                                <div class="text-white fw-bold fs-5">@people.Count Participantes</div>
-                                <small class="text-white-50">Listos para el intercambio navideño</small>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="text-white fw-bold fs-5">@people.Count Participantes</span>
+                                </div>
+                                <div class="text-white-50 small d-flex align-items-center gap-1 mt-0.5">
+                                    <SvgIcon Name="map-pin" Size="13" Class="text-warning" />
+                                    <span class="text-white fw-semibold" style="text-decoration: underline; text-underline-offset: 3px;">Ver Mapa de Oficina</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gift Exchange Schedule Timeline -->
+            <div class="schedule-timeline-container mt-4 position-relative" style="z-index: 2;">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2 pb-1">
+                    <span class="text-white text-uppercase fw-bold d-inline-flex align-items-center gap-2 small" style="letter-spacing: 0.06em;">
+                        <SvgIcon Name="gift" Size="15" Class="text-warning" />
+                        <span>Fechas de Intercambio de Regalos</span>
+                    </span>
+                    <span class="badge text-white px-2.5 py-1 rounded-pill" style="background: rgba(255, 102, 0, 0.3); border: 1px solid rgba(255, 102, 0, 0.45); font-size: 0.72rem; font-weight: 600;">
+                        5 Entregas Programadas
+                    </span>
+                </div>
+
+                <div class="row g-2 g-md-2 g-lg-3">
+                    <!-- 13 NOV -->
+                    <div class="col-6 col-md-4 col-lg">
+                        <div class="timeline-date-card p-2 p-sm-3 rounded-3 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="timeline-date-pill mb-1">
+                                    <span class="fw-bold">13 NOV</span>
+                                    <small class="text-white-50 ms-1">Vie</small>
+                                </div>
+                                <div class="timeline-stage-title fw-semibold text-truncate mb-2">
+                                    Inicio
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <span class="timeline-amount-pill fw-bold">
+                                    $5
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 20 NOV -->
+                    <div class="col-6 col-md-4 col-lg">
+                        <div class="timeline-date-card p-2 p-sm-3 rounded-3 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="timeline-date-pill mb-1">
+                                    <span class="fw-bold">20 NOV</span>
+                                    <small class="text-white-50 ms-1">Vie</small>
+                                </div>
+                                <div class="timeline-stage-title fw-semibold text-truncate mb-2">
+                                    Intercambio
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <span class="timeline-amount-pill fw-bold">
+                                    $5
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 27 NOV -->
+                    <div class="col-6 col-md-4 col-lg">
+                        <div class="timeline-date-card p-2 p-sm-3 rounded-3 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="timeline-date-pill mb-1">
+                                    <span class="fw-bold">27 NOV</span>
+                                    <small class="text-white-50 ms-1">Vie</small>
+                                </div>
+                                <div class="timeline-stage-title fw-semibold text-truncate mb-2">
+                                    Intercambio
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <span class="timeline-amount-pill fw-bold">
+                                    $5
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 04 DIC -->
+                    <div class="col-6 col-md-4 col-lg">
+                        <div class="timeline-date-card p-2 p-sm-3 rounded-3 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="timeline-date-pill mb-1">
+                                    <span class="fw-bold">04 DIC</span>
+                                    <small class="text-white-50 ms-1">Vie</small>
+                                </div>
+                                <div class="timeline-stage-title fw-semibold text-truncate mb-2">
+                                    Intercambio
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <span class="timeline-amount-pill fw-bold">
+                                    $5
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 11 DIC - REGALO FINAL -->
+                    <div class="col-12 col-md-4 col-lg">
+                        <div class="timeline-date-card timeline-final-card p-2 p-sm-3 rounded-3 text-center h-100 d-flex flex-column justify-content-between">
+                            <div>
+                                <div class="timeline-date-pill mb-1">
+                                    <span class="fw-bold text-warning">11 DIC</span>
+                                    <small class="text-white-50 ms-1">Vie</small>
+                                </div>
+                                <div class="timeline-stage-title fw-bold text-truncate mb-2 text-white">
+                                    🎁 ¡Regalo Final!
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-center">
+                                <span class="timeline-amount-pill timeline-amount-final">
+                                    $25 - $30
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -360,19 +483,22 @@
                             <div class="p-4 flex-grow-1 d-flex flex-column">
                                 <!-- Card Header: Avatar/Photo & Name -->
                                 <div class="d-flex align-items-center gap-3 mb-3">
-                                    @if (person.HasProfilePhoto)
-                                    {
-                                        <img src="@person.ProfilePhotoPath" 
-                                             alt="@person.FullName" 
-                                             class="rounded-circle shadow-sm flex-shrink-0" 
-                                             style="width: 54px; height: 54px; object-fit: cover; border: 2px solid var(--bnc-orange);" />
-                                    }
-                                    else
-                                    {
-                                        <div class="avatar-circle" style="background: linear-gradient(135deg, @(person.AvatarColor ?? "#002855"), #FF6600);">
-                                            @person.Initials
-                                        </div>
-                                    }
+                                    <div class="avatar-wrapper flex-shrink-0">
+                                        @if (person.HasProfilePhoto)
+                                        {
+                                            <img src="@person.ProfilePhotoPath" 
+                                                 alt="@person.FullName" 
+                                                 class="rounded-circle shadow-sm" 
+                                                 style="width: 54px; height: 54px; object-fit: cover; border: 2px solid var(--bnc-orange);" />
+                                        }
+                                        else
+                                        {
+                                            <div class="avatar-circle" style="background: linear-gradient(135deg, @(person.AvatarColor ?? "#002855"), #FF6600);">
+                                                @person.Initials
+                                            </div>
+                                        }
+                                        <SantaHat />
+                                    </div>
                                     <div class="overflow-hidden flex-grow-1">
                                         <div class="d-flex align-items-center gap-2">
                                             <h5 class="fw-bold mb-0 text-dark text-truncate">@person.FullName</h5>
@@ -469,11 +595,18 @@
                  OnSaved="HandleMyProfileSavedAsync"
                  OnCancel="CloseMyProfileModal" />
 
+<!-- Office Floor Plan Map Modal -->
+<OfficeMapModal IsVisible="showOfficeMapModal"
+                OnClose="() => showOfficeMapModal = false"
+                People="people"
+                OnPersonSelected="OpenPersonFromMap" />
+
 @code {
     private List<Person> people = new();
     private List<Person> filteredPeople = new();
     private string searchTerm = "";
     private bool isLoading = true;
+    private bool showOfficeMapModal = false;
 
     // Unified Login State
     private string loginUsername = "";
@@ -645,6 +778,12 @@
 
     private void SelectPerson(Person person)
     {
+        selectedPerson = person;
+    }
+
+    private void OpenPersonFromMap(Person person)
+    {
+        showOfficeMapModal = false;
         selectedPerson = person;
     }
 
