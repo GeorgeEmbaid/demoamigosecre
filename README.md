@@ -25,7 +25,7 @@ Al hacer clic en cualquier tarjeta se abre un panel lateral (*Offcanvas Drawer*)
 ### 🛡️ 3. Portal Administrativo Seguro
 * **Autenticación de Acceso**:
   * **Usuario:** `admin`
-  * **Contraseña:** `bnc2026`
+  * **Contraseña:** `admin2026`
   * Botón de ayuda para auto-completar credenciales de prueba.
 * **Dashboard con Métricas**:
   * Total de participantes registrados.

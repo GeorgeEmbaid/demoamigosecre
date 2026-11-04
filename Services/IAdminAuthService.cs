@@ -4,7 +4,7 @@ namespace AmigoSecreto.Services;
 
 public interface IAdminAuthService
 {
-    // Estado del Administrador (admin / bnc2026) - Separado de los participantes
+    // Estado del Administrador (admin / admin2026) - Separado de los participantes
     bool IsAuthenticated { get; }
     string? CurrentUser { get; }
 

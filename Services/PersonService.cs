@@ -167,7 +167,7 @@ public class PersonService : IPersonService
 
         if (string.IsNullOrWhiteSpace(person.Email))
         {
-            person.Email = $"{person.Username.ToLowerInvariant()}@bncenlinea.net";
+            person.Email = $"{person.Username.ToLowerInvariant()}@amigosecreto.local";
         }
         else
         {

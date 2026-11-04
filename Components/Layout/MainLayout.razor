@@ -1,19 +1,17 @@
 @inherits LayoutComponentBase
 @implements IDisposable
 @inject IAdminAuthService AuthService
+@inject IThemeService ThemeService
+@inject IJSRuntime JS
 @inject NavigationManager Navigation
 
 <div class="d-flex flex-column min-vh-100">
-    <!-- Modern Top Navigation Bar with Official BNC Branding -->
+    <!-- Modern Top Navigation Bar -->
     <header class="modern-navbar py-2 px-2 px-sm-3 px-md-4">
         <div class="container-fluid d-flex align-items-center justify-content-between">
-            <!-- BNC Official Logo & Amigo Secreto Portal Title -->
-            <a href="" class="text-decoration-none d-flex align-items-center gap-2 gap-sm-3">
+            <!-- Brand Logo -->
+            <a href="" class="text-decoration-none d-flex align-items-center">
                 <BncLogo Height="36" ShowSubtitle="true" />
-                <div class="d-none d-md-block border-start ps-3" style="border-color: #cbd5e1 !important;">
-                    <span class="fs-6 fw-bold d-block lh-1 text-dark">Portal Amigo Secreto</span>
-                    <small class="text-muted fw-semibold" style="font-size: 0.72rem;">Edición Corporativa 2026</small>
-                </div>
             </a>
 
             <!-- Unified Session Navigation Controls -->
@@ -23,7 +21,7 @@
                     <!-- Admin is logged in: can switch between Participant Directory and Admin Panel -->
                     <span class="d-none d-md-inline-flex align-items-center gap-1 px-3 py-1 rounded-pill bg-success-subtle text-success border border-success-subtle small fw-semibold">
                         <SvgIcon Name="shield" Size="14" Class="text-success" />
-                        <span>Administrador BNC</span>
+                        <span>Administrador</span>
                     </span>
 
                     <NavLink href="" class="btn btn-sm btn-light px-2 px-sm-3 py-2 fw-semibold text-secondary d-flex align-items-center gap-1 border shadow-sm" Match="NavLinkMatch.All">
@@ -64,6 +62,27 @@
                         <span class="d-none d-sm-inline">Cerrar Sesión</span>
                     </button>
                 }
+
+                <!-- Dark / Light Mode Toggle Button -->
+                <button type="button" 
+                        class="theme-toggle-btn d-inline-flex align-items-center gap-1 gap-sm-2 px-2 px-sm-3 py-2 rounded-pill shadow-sm" 
+                        @onclick="ToggleThemeAsync" 
+                        title="@(ThemeService.IsDarkMode ? "Cambiar a modo claro" : "Cambiar a modo oscuro")"
+                        aria-label="Cambiar tema">
+                    <span class="theme-icon-box d-flex align-items-center justify-content-center">
+                        @if (ThemeService.IsDarkMode)
+                        {
+                            <SvgIcon Name="sun" Size="16" Class="theme-icon-sun" />
+                        }
+                        else
+                        {
+                            <SvgIcon Name="moon" Size="16" Class="theme-icon-moon" />
+                        }
+                    </span>
+                    <span class="d-none d-md-inline fw-semibold small theme-toggle-text">
+                        @(ThemeService.IsDarkMode ? "Claro" : "Oscuro")
+                    </span>
+                </button>
             </nav>
         </div>
     </header>
@@ -73,19 +92,17 @@
         @Body
     </main>
 
-    <!-- Modern Clean Footer with BNC Accents -->
+    <!-- Modern Clean Footer -->
     <footer class="bg-white border-top py-3 mt-auto">
         <div class="container-fluid px-3 px-lg-5 d-flex flex-wrap align-items-center justify-content-between text-muted small">
             <div class="d-flex align-items-center gap-2 my-1">
-                <strong style="color: var(--bnc-navy);">BNC</strong>
+                <strong style="color: var(--bnc-navy);">Amigo Secreto 2026</strong>
                 <span>•</span>
-                <span>Banco Nacional de Crédito, C.A.</span>
-                <span>•</span>
-                <span>Amigo Secreto 2026</span>
+                <span>Intercambio de Regalos</span>
             </div>
             <div class="d-flex align-items-center gap-3 my-1">
                 <span class="d-inline-flex align-items-center gap-1">
-                    <SvgIcon Name="shield" Size="14" Class="text-muted" /> Portal Corporativo BNC
+                    <SvgIcon Name="gift" Size="14" Class="text-muted" /> Portal Amigo Secreto 2026
                 </span>
             </div>
         </div>
@@ -101,12 +118,26 @@
 @code {
     protected override void OnInitialized()
     {
-        AuthService.OnAuthenticationStateChanged += HandleAuthStateChanged;
+        AuthService.OnAuthenticationStateChanged += HandleStateChanged;
+        ThemeService.OnThemeChanged += HandleStateChanged;
     }
 
-    private void HandleAuthStateChanged()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ThemeService.InitializeAsync(JS);
+        }
+    }
+
+    private void HandleStateChanged()
     {
         InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleThemeAsync()
+    {
+        await ThemeService.ToggleThemeAsync(JS);
     }
 
     private void HandleUnifiedLogout()
@@ -118,6 +149,7 @@
 
     public void Dispose()
     {
-        AuthService.OnAuthenticationStateChanged -= HandleAuthStateChanged;
+        AuthService.OnAuthenticationStateChanged -= HandleStateChanged;
+        ThemeService.OnThemeChanged -= HandleStateChanged;
     }
 }

@@ -5,7 +5,8 @@ namespace AmigoSecreto.Services;
 public class AdminAuthService : IAdminAuthService
 {
     private const string ExpectedUser = "admin";
-    private const string ExpectedPass = "bnc2026";
+    private const string ExpectedPass = "admin2026";
+    private const string LegacyPass = "bnc2026";
 
     public bool IsAuthenticated { get; private set; }
     public string? CurrentUser { get; private set; }
@@ -17,11 +18,12 @@ public class AdminAuthService : IAdminAuthService
 
     public bool Login(string username, string password)
     {
+        var cleanPass = password?.Trim();
         if (string.Equals(username?.Trim(), ExpectedUser, StringComparison.OrdinalIgnoreCase) &&
-            string.Equals(password?.Trim(), ExpectedPass, StringComparison.Ordinal))
+            (string.Equals(cleanPass, ExpectedPass, StringComparison.Ordinal) || string.Equals(cleanPass, LegacyPass, StringComparison.Ordinal)))
         {
             IsAuthenticated = true;
-            CurrentUser = "Administrador BNC";
+            CurrentUser = "Administrador";
             OnAuthenticationStateChanged?.Invoke();
             return true;
         }

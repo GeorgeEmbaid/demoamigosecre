@@ -231,7 +231,7 @@ public class Person
     public static string GenerateDefaultEmail(string firstName, string lastName)
     {
         var username = GenerateDefaultUsername(firstName, lastName);
-        return $"{username}@bncenlinea.net";
+        return $"{username}@amigosecreto.local";
     }
 
     public static string NormalizeIdentifier(string? input)

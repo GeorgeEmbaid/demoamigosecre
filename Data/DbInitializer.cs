@@ -54,7 +54,7 @@ public static class DbInitializer
         }
         else if (await context.People.AnyAsync())
         {
-            // Asegurarnos de que todos los registros existentes tengan Username, Password, @bncenlinea.net e imágenes desde memoria (.txt)
+            // Asegurarnos de que todos los registros existentes tengan Username, Password e imágenes desde memoria (.txt)
             var existingPeople = await context.People.ToListAsync();
             bool updatedAny = false;
             foreach (var p in existingPeople)
@@ -69,9 +69,14 @@ public static class DbInitializer
                     p.Password = Person.GenerateDefaultPassword(p.LastName);
                     updatedAny = true;
                 }
-                if (string.IsNullOrWhiteSpace(p.Email) || p.Email.EndsWith("@bnc.com.ve", StringComparison.OrdinalIgnoreCase))
+                if (string.IsNullOrWhiteSpace(p.Email) || p.Email.Contains("bnc", StringComparison.OrdinalIgnoreCase))
                 {
                     p.Email = Person.GenerateDefaultEmail(p.FirstName, p.LastName);
+                    updatedAny = true;
+                }
+                if (p.Notes != null && p.Notes.Contains("BNC", StringComparison.OrdinalIgnoreCase))
+                {
+                    p.Notes = p.Notes.Replace(" BNC", "").Replace("BNC ", "").Replace("BNC", "").Trim();
                     updatedAny = true;
                 }
                 if (imageStorage != null)
@@ -129,7 +134,7 @@ public static class DbInitializer
             }
         }
 
-        Console.WriteLine("[AmigoSecreto] Seeding official BNC participants with @bncenlinea.net and login credentials...");
+        Console.WriteLine("[AmigoSecreto] Seeding official participants with login credentials...");
 
         var rawData = new[]
         {
@@ -211,7 +216,7 @@ public static class DbInitializer
                 Likes = "Pendiente por definir en el portal",
                 Dislikes = "Pendiente por definir en el portal",
                 Allergies = "",
-                Notes = "Participante oficial del Amigo Secreto BNC 2026."
+                Notes = "Participante oficial del Amigo Secreto 2026."
             });
 
             colorIdx++;
@@ -220,6 +225,6 @@ public static class DbInitializer
         await context.People.AddRangeAsync(people);
         await context.SaveChangesAsync();
         try { await context.Database.ExecuteSqlRawAsync("PRAGMA wal_checkpoint(TRUNCATE);"); } catch { }
-        Console.WriteLine($"[AmigoSecreto] Successfully seeded {people.Count} participants with @bncenlinea.net!");
+        Console.WriteLine($"[AmigoSecreto] Successfully seeded {people.Count} participants!");
     }
 }

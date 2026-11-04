@@ -25,6 +25,8 @@ builder.Services.AddDbContextFactory<AppDbContext>(options =>
 builder.Services.AddSingleton<IImageStorageService, ImageStorageService>();
 
 // Register domain services
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IThemeService, ThemeService>();
 builder.Services.AddScoped<IPersonService, PersonService>();
 builder.Services.AddScoped<IAdminAuthService, AdminAuthService>();
 

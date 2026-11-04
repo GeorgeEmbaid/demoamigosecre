@@ -1,4 +1,4 @@
-window.bncSummaryGenerator = {
+window.amigoSecretoSummaryGenerator = {
     loadImage: function (src) {
         return new Promise((resolve) => {
             if (!src) {
@@ -75,9 +75,8 @@ window.bncSummaryGenerator = {
     downloadPersonSummary: async function (data) {
         const rawProposals = Array.isArray(data.giftProposals) ? data.giftProposals : [];
 
-        // 1. Cargar imágenes necesarias (Logo BNC, Foto de Perfil e Imágenes de cada Propuesta de Regalo)
-        const [logoImg, profileImg, ...proposalImgs] = await Promise.all([
-            this.loadImage("/images/BNC_Logo.png"),
+        // 1. Cargar imágenes necesarias (Foto de Perfil e Imágenes de cada Propuesta de Regalo)
+        const [profileImg, ...proposalImgs] = await Promise.all([
             this.loadImage(data.profilePhotoUrl),
             ...rawProposals.map((p) => this.loadImage(p.imageUrl))
         ]);
@@ -262,7 +261,7 @@ window.bncSummaryGenerator = {
         ctx.strokeStyle = "#e2e8f0";
         ctx.stroke();
 
-        // 4. Encabezado Corporativo BNC (Degradado Azul Marino + Acento Naranja)
+        // 4. Encabezado Corporativo (Degradado Azul Marino + Acento Naranja)
         let curY = 16;
         ctx.save();
         this.roundRect(ctx, 16, curY, canvasWidth - 32, headerH, 22);
@@ -309,7 +308,7 @@ window.bncSummaryGenerator = {
             ctx.font = "bold 30px 'Segoe UI', Roboto, Arial, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
-            ctx.fillText(data.initials || "BNC", avatarX + avatarSize / 2, avatarY + avatarSize / 2);
+            ctx.fillText(data.initials || "AS", avatarX + avatarSize / 2, avatarY + avatarSize / 2);
         }
         ctx.restore();
 
@@ -326,32 +325,39 @@ window.bncSummaryGenerator = {
         ctx.textBaseline = "top";
 
         // Pill superior
-        this.roundRect(ctx, titleX, curY + 32, 235, 24, 12);
+        this.roundRect(ctx, titleX, curY + 32, 215, 24, 12);
         ctx.fillStyle = "rgba(255, 102, 0, 0.9)";
         ctx.fill();
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 11.5px 'Segoe UI', Roboto, Arial, sans-serif";
-        ctx.fillText("AMIGO SECRETO BNC 2026 • FICHA OFICIAL", titleX + 12, curY + 38);
+        ctx.fillText("AMIGO SECRETO 2026 • FICHA OFICIAL", titleX + 12, curY + 38);
 
         // Nombre completo
         ctx.fillStyle = "#ffffff";
         ctx.font = "bold 30px 'Segoe UI', Roboto, Arial, sans-serif";
-        ctx.fillText(data.fullName || "Participante BNC", titleX, curY + 64);
+        ctx.fillText(data.fullName || "Participante", titleX, curY + 64);
 
         ctx.fillStyle = "rgba(255, 255, 255, 0.78)";
         ctx.font = "500 14px 'Segoe UI', Roboto, Arial, sans-serif";
         ctx.fillText("Resumen de gustos, preferencias y restricciones", titleX, curY + 102);
 
-        // Logo BNC en la esquina derecha del header
-        if (logoImg) {
-            const logoBoxSize = 66;
-            const logoBoxX = canvasWidth - outerPad - logoBoxSize - 8;
-            const logoBoxY = curY + 36;
-            this.roundRect(ctx, logoBoxX, logoBoxY, logoBoxSize, logoBoxSize, 14);
-            ctx.fillStyle = "#ffffff";
-            ctx.fill();
-            ctx.drawImage(logoImg, logoBoxX + 7, logoBoxY + 7, logoBoxSize - 14, logoBoxSize - 14);
-        }
+        // Badge decorativo en la esquina derecha del header
+        const brandBoxSize = 66;
+        const brandBoxX = canvasWidth - outerPad - brandBoxSize - 8;
+        const brandBoxY = curY + 36;
+        this.roundRect(ctx, brandBoxX, brandBoxY, brandBoxSize, brandBoxSize, 14);
+        ctx.fillStyle = "rgba(255, 102, 0, 0.25)";
+        ctx.fill();
+        ctx.strokeStyle = "#FF6600";
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 28px 'Segoe UI', Arial, sans-serif";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText("🎁", brandBoxX + brandBoxSize / 2, brandBoxY + brandBoxSize / 2);
+        ctx.textAlign = "left";
 
         ctx.restore();
         curY += headerH + 22;
@@ -590,12 +596,12 @@ window.bncSummaryGenerator = {
             curY += notesBlockH + gapBetweenBlocks;
         }
 
-        // 11. Pie de página corporativo BNC
+        // 11. Pie de página
         ctx.fillStyle = "#64748b";
         ctx.font = "600 12.5px 'Segoe UI', Roboto, Arial, sans-serif";
         ctx.textAlign = "center";
         ctx.fillText(
-            "Banco Nacional de Crédito (BNC) • Portal Interactivo Amigo Secreto 2026",
+            "Portal Interactivo • Amigo Secreto 2026",
             canvasWidth / 2,
             curY + 12
         );
@@ -625,3 +631,4 @@ window.bncSummaryGenerator = {
         });
     }
 };
+window.bncSummaryGenerator = window.amigoSecretoSummaryGenerator;

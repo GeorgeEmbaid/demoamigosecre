@@ -1,26 +1,40 @@
+@inject IThemeService ThemeService
+@implements IDisposable
+
 @code {
     [Parameter] public int Height { get; set; } = 40;
     [Parameter] public bool IsDarkTheme { get; set; } = false;
     [Parameter] public bool ShowSubtitle { get; set; } = true;
     [Parameter] public string Class { get; set; } = "";
 
-    private string NavyColor => IsDarkTheme ? "#FFFFFF" : "#002855";
+    private bool EffectiveDark => IsDarkTheme || ThemeService.IsDarkMode;
+    private string NavyColor => EffectiveDark ? "#FFFFFF" : "#002855";
     private string OrangeColor => "#FF6600";
-    private string SubtitleColor => IsDarkTheme ? "#94A3B8" : "#4A5568";
+    private string SubtitleColor => EffectiveDark ? "#94A3B8" : "#4A5568";
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        ThemeService.OnThemeChanged -= StateHasChanged;
+    }
 }
 
-<div class="d-inline-flex align-items-center gap-2 bnc-brand-logo @Class" style="user-select: none;">
-    <!-- Official BNC Logo Image with fallback -->
-    <img src="images/BNC_Logo.png" 
-         onerror="this.onerror=null; this.src='https://d1uubxdj0phgsa.cloudfront.net/Images/BNC_Logo.png';" 
-         alt="BNC Logo" 
-         style="height: @(Height)px; width: auto; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));" />
+<div class="d-inline-flex align-items-center gap-2 app-brand-logo @Class" style="user-select: none;">
+    <!-- Festive Gift Brand Icon -->
+    <div class="rounded-3 d-flex align-items-center justify-content-center shadow-sm flex-shrink-0" 
+         style="width: @(Height)px; height: @(Height)px; background: linear-gradient(135deg, #FF6600 0%, #E65100 100%); color: white;">
+        <SvgIcon Name="gift" Size="@((int)(Height * 0.58))" />
+    </div>
 
     <!-- Typography Badge -->
     <div class="d-flex flex-column justify-content-center lh-1">
         <div class="d-flex align-items-center gap-1">
-            <span style="color: @NavyColor; font-family: 'Segoe UI', -apple-system, sans-serif; font-weight: 900; font-size: @(Height * 0.52)px; letter-spacing: -0.01em;">
-                BNC
+            <span style="color: @NavyColor; font-family: 'Segoe UI', -apple-system, sans-serif; font-weight: 800; font-size: @(Height * 0.44)px; letter-spacing: -0.01em;">
+                Amigo Secreto
             </span>
             <span class="badge" style="background: linear-gradient(135deg, #FF6600 0%, #E65100 100%); color: white; font-size: @(Height * 0.26)px; padding: 2px 6px; border-radius: 4px; font-weight: 700; transform: translateY(-1px); box-shadow: 0 2px 4px rgba(255,102,0,0.3);">
                 2026
@@ -28,8 +42,8 @@
         </div>
         @if (ShowSubtitle)
         {
-            <span style="color: @SubtitleColor; font-size: @(Height * 0.22)px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; margin-top: 3px;">
-                Banco Nacional de Crédito
+            <span style="color: @SubtitleColor; font-size: @(Height * 0.22)px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 3px;">
+                Intercambio de Regalos
             </span>
         }
     </div>
