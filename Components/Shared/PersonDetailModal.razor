@@ -195,6 +195,15 @@
                 </div>
             }
 
+            <!-- Notas Adicionales -->
+            @if (!string.IsNullOrWhiteSpace(Person.Notes))
+            {
+                <div class="p-3 bg-light rounded-3 border mb-3">
+                    <h6 class="fw-bold text-muted small text-uppercase mb-1">Mensaje para el amigo secreto</h6>
+                    <p class="mb-0 text-dark small fst-italic">"@Person.Notes"</p>
+                </div>
+            }
+
             <!-- 1. Cosas que le gustan -->
             <div class="preference-block likes-block shadow-sm">
                 <div class="d-flex align-items-center justify-content-between mb-3">
@@ -317,14 +326,7 @@
                 }
             </div>
 
-            <!-- Notas Adicionales -->
-            @if (!string.IsNullOrWhiteSpace(Person.Notes))
-            {
-                <div class="p-3 bg-light rounded-3 border mb-3">
-                    <h6 class="fw-bold text-muted small text-uppercase mb-1">Mensaje para el amigo secreto</h6>
-                    <p class="mb-0 text-dark small fst-italic">"@Person.Notes"</p>
-                </div>
-            }
+
         </div>
 
         <!-- Drawer Footer with BNC Orange Button -->
